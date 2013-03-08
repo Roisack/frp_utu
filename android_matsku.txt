@@ -1,0 +1,15 @@
+http://fi.wikipedia.org/wiki/Android
+http://en.wikipedia.org/wiki/Android_(operating_system)
+http://blog.androidsuomi.fi/mika-on-android/
+http://linux.fi/wiki/Android
+http://www.android.fi/mika-ihmeen-android/
+https://trac.cc.jyu.fi/projects/ohj2/wiki/Android
+http://mobiilikehitys.fi/category/tutoriaalit/kehitysymparisto/
+http://www.mikarantakeisu.fi/internetsivut/node/4
+
+http://www.sofokus.com/blogi/2012/07/mita-on-responsiivinen-design/
+http://www.mattimattila.fi/comments/android_suunnittelumallit
+http://mobiilikehitys.fi/nain-paaset-android-kehityksessa-alkuun/
+http://www.mit.jyu.fi/opiskelu/seminaarit/tiesem2011/Andoidsovelluskehitys.html
+http://batman.jamk.fi/~tuito/ohj2/android/android.htm
+http://mobiilikehitys.fi/category/alustat/android/
