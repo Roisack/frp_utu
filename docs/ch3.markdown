@@ -18,11 +18,11 @@ On esimerkki ohjainten käytöstä. Siinä luodaan kolme ohjainta jotka asetella
 Yhdelle riville vierekkäin.
 
 ~~~~{.haskell}
-Input1 <- entry f []
-Input2 <- entry f []
-Output <- staticText f []
+input1 <- entry f []
+input2 <- entry f []
+output <- staticText f []
 
-Set f [layout := margin 10 $row 10 $
+set f [layout := margin 10 $row 10 $
         [widget input1, label "+", widget input2,
         label "=", minsize (sz 40 20) $ widget output]
 ~~~~
