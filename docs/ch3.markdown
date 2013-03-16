@@ -11,10 +11,6 @@ Joihin reagoidaan ohjelman tasolla. Ohjaimet ovat eräänlaisia näkymiä joiden
 Kautta käyttäjä vaikuttaa sovelluksen toimintaan. Näitä ovat mm. painikkeet ja
 Tekstikentät. Ohjaimet ovat pitkälti samanlaisia kummassakin tapauksessa.
 
-Omien komponenttien tekeminen on samanlaista kummassakin järjestelmässä, mutta
-Kummassakin pitäisi olla tarpeeksi valmiita komponentteja kaikkiin tarpeisiin.
-Jos komponentit ei riitä, voidaan tehdä aliluokkia valmiista ohjaimista.
-
 Ulkoasuohjaimet määrittelevät miten ohjaimet sijoitellaan sovelluksessa.
 Tällaisia ohjaimia ovat esimerkiksi WxWidgets / reactive-banana -yhdistelmässä
 `margin`, `grid` ja `row` kombinaattorit. Osoitteessa [Arithmetic.hs][counter]
