@@ -62,9 +62,9 @@ Black box testauksella pystytään tekemään monimutkaisiakin käyttötapaustes
 Käyttöliittymää voi myös testata manuaalisesti esimerkiksi luomalla testitapukset UML- kaavion perusteella  tai sekvenssi –kaavion avulla. Kyseisistä diagrammeista voi luoda tarvittavat testi tapaukset, jotka ottavat huomioon myö kaikki käyttäjän mahdolliset toiminnot.  Ohessa esimerkki UML- pohjaisesta testi tapausten luonnista käyttäen esimerkkinä eTM – Electronic Town Meeting  ohjelmistoa.   (Hurme, 2011.)
 
 Kuva 2. Esimerkki  eTM –ohjelman UML-kaaviosta.
-[etm](images/etm.png)
+![etm](images/etm.png)
 Kuva 3. UML- kaavion pohjalta luodut sekä toteutut testi tapaukset.
-[uml](images/uml.png)
+![uml](images/uml.png)
 
 Manuaalisen testauksen heikkoutena on sen hitaus mutta sen hyötynä on mahdollisuus keskittyä tiettyihin käyttöliittymän elementteihin sekä kyky toimia ihmismäisemmin eli niin sanotusti nähdä tuote kuluttujan näkökulmasta. 
 Käyttöliittymän testauksessa on myös huomioitava käytettävyys , saatavuus sekä yleisimmät tottumukset, joita käyttäjillä on esimerkiksi. jos ikkunan reunassa on x , käyttäjä olettaa, että se sulkee kyseisen ikkunan. Android sovelluksen esteettömyyden testauksessa olisi hyvä huomioida seuraavat yksityiskohdat. Kaikkien toimintojen pitäisi antaa selkeä palaute käyttäjälle sekä aiheuttaa kyseiseen toimintaan liittyvän tapahtuman. Käyttäjän pitäisi pystyä navigoimaan käyttöjärjestelmää helpon oloisesti, useilla eri navigointi vaihtoehdoilla. On myös varmistettava, että kaikille toiminnoilla on useita vaihtoehtoja eikä ainoastaan yhtä esimerkiksi. äänikomento tai ruudun koskettaminen voivat aiheuttaa saman toiminnon.
