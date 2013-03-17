@@ -43,9 +43,12 @@ Haskell käännetään jollakin Haskell-kääntäjällä binääri-muotoon monen
 
 Yleisesti kehitystyökalujen asennus mille tahansa Haskell-ympäristölle tehdään HackageDB:n kautta käyttäen Cabal-ohjelmaa. Cabal pyrkii muiden paketinhallintajärjestelmien tavoin selvittämään muut vaadittavat paketit ja asentamaan ne ennen haluttua pakettia. Esimerkiksi wx-haskell ja reactive-banana asennus cabalin läpi voidaan suorittaa seuraavasti:
 
->"cabal update
-cabal install reactive-banana
-cabal install reactive-banana-wx"
+>cabal update
+
+>cabal install reactive-banana
+
+>cabal install reactive-banana-wx
+
 
 Koska kysessä on vain korkean tason FRP-kirjasto, niin ei itse reactive-banana rajoita alustan valintaa millään tavalla. Sen sijaan valittu käyttöliittymäkirjasto määrää nämä rajoitteet - esimerkiksi wx-haskell tukee kaikkia niitä alustoja, joissa wx-widgets toimii.
 
@@ -76,15 +79,9 @@ Ei suuremmin ole vielä mitään olemassa. jotain juttua ghc:stä ja ehkäpä ku
 ## Lähteet:
 
 [1]: Elliot, Hudak: Functional Reactive Animation http://conal.net/papers/icfp97/
+
 [2]: Courtney, Elliot: Genuinely Functional User Interfaces http://webdoc.sub.gwdg.de/ebook/serien/ah/UU-CS/2001-62.pdf#page=47
+
 [3]: http://www.haskell.org/haskellwiki/FRP_explanation_using_reactive-banana
+
 [4]: http://c2.com/cgi/wiki?FunctionalReactiveProgramming
-
-
-
-UI-tekniikan taustoja
-Milloin kehitetty, historiaa, eknen toimesta
-Mitä vaatimuksia ko. UI-sovellusten suorittamisen osalta on
-Mitä vaatii toimiakseen (rauta, softa, kirjastot)
-Miten ohjelmat ilmaistaan
-Onko tekniikkaan liittyne jotain erityisiä käsitteitä
