@@ -72,10 +72,6 @@ Jos ALV muuttuisi myöhemmin, niin pitäisi taulukon jokaisen arvolisäverollise
 
 Funktionaaliset kielet ovat ytimessään sivuvaikutuksettomia, mutta usein sivuvaikutukset ovat välttämättömiä käyttöliittymissä: Hiirtä on saatettu painaa muutama minuutti sitten, ja tämän vaikutukset näkyvät kenties vasta nyt käyttöliittymässä. Funktionaaliset kielet ovat yleisesti ratkaisuja ongelmiin määriteltynä käsitteen "nyt, tämä hetki" kautta, joten FRP:n täytyy kiertää tätä ongelmaa. Tämä on usein ratkaistu pitämällä pitkää historiaa tapahtumista, mutta ongelmaksi muodostuvat mahdollisesti suureksi kasvavat historiat. Liian suuri muistinkäyttö voi aiheuttaa hitautta, jos ongelma kasvaa liian suureksi. Imperatiivissa ympäristöissä tällaisia historioita ylläpidetään käsin, mutta tämä on usein vaikea tehtävä: tuloksena voi olla muistivuotoja, etenkin moniajoa hyödyntävissä ohjelmissa[4].
 
-## 4 Työkalut
-
-Ei suuremmin ole vielä mitään olemassa. jotain juttua ghc:stä ja ehkäpä kuva siitä ainoasta haskell-idestä.
-
 ## Lähteet:
 
 [1]: Elliot, Hudak: Functional Reactive Animation http://conal.net/papers/icfp97/
