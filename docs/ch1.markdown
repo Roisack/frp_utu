@@ -39,17 +39,6 @@ Reactive-bananan ensimmäisen version julkaisi Heinrich Apfelmus vuonna 2011. Se
 
 Reactive-banana ei itsessään tarjoa mitään konkreettista käyttöliittymää - se vain mahdollistaa FRP:n toteuttamisen Haskellissa. Kehittynein liitäntä on wx-haskell, joka mahdollistaa wx-widgetsin käyttämisen Haskellin kanssa. Käytimme edellämainittua kirjastoa reactive-bananan kanssa ja toteutimme sillä yksinkertaisia käyttöliittymiä.
 
-Haskell käännetään jollakin Haskell-kääntäjällä binääri-muotoon monen muun kielen tavoin, jonka jälkeen sen suorittaminen tapahtuu samoin kuten muidekin valitun alustan binääreiden. Kääntäjistä suosituin on Glasgow Haskell Compiler.
-
-Yleisesti kehitystyökalujen asennus mille tahansa Haskell-ympäristölle tehdään HackageDB:n kautta käyttäen Cabal-ohjelmaa. Cabal pyrkii muiden paketinhallintajärjestelmien tavoin selvittämään muut vaadittavat paketit ja asentamaan ne ennen haluttua pakettia. Esimerkiksi wx-haskell ja reactive-banana asennus cabalin läpi voidaan suorittaa seuraavasti:
-
->cabal update
-
->cabal install reactive-banana
-
->cabal install reactive-banana-wx
-
-
 Koska kysessä on vain korkean tason FRP-kirjasto, niin ei itse reactive-banana rajoita alustan valintaa millään tavalla. Sen sijaan valittu käyttöliittymäkirjasto määrää nämä rajoitteet - esimerkiksi wx-haskell tukee kaikkia niitä alustoja, joissa wx-widgets toimii.
 
 ### 3.4 Miten ohjelmat ilmaistaan
