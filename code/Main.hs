@@ -23,12 +23,11 @@ parseThesis path = do
   return $ maybe [] id $ parse contents
   where
     parseThesisCount (x:_) = readMay $ T.unpack x
-    parseThesisNames xs n = listToMaybe . take n . drop 1 $ xs
-    listToMaybe [] = Nothing
-    listToMaybe xs = Just xs
-    parse :: Text -> Maybe [Thesis]
-    parse contents = do
-      let contents' = T.lines contents
+    parseThesisNames xs n  = listToMaybe . take n . drop 1 $ xs
+    listToMaybe []         = Nothing
+    listToMaybe xs         = Just xs
+    parse contents         = do
+      let contents' = T.splitOn "\r\n" contents
       n <- parseThesisCount contents'
       names <- parseThesisNames contents' n
       courses <- listToMaybe $ groupBy ((==) `on` fst) [T.breakOn " " course | course <- drop (n+1) contents']
