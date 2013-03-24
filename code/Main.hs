@@ -13,6 +13,10 @@ import Control.Monad
 import Data.Maybe (maybe, catMaybes)
 import Data.List (groupBy)
 import Data.Function (on)
+import qualified Text.Blaze.Html5 as H
+import Text.Blaze.Html5 (Html, (!))
+import qualified Text.Blaze.Html5.Attributes as A
+import Data.Monoid
 
 type Course        = Text
 type Name          = Text
@@ -57,4 +61,17 @@ parseThesis path = do
       courses <- listToMaybe $ groupBy ((==) `on` fst) [T.breakOn " " course | course <- drop (n+1) contents']
       return $ zipWith (\name course -> Thesis name (map snd course)) names courses
 
-main = simpleHTTP nullConf $ ok ("Hello, world" :: Text)
+mainView :: Html
+mainView = H.docTypeHtml $ do
+  H.head $ do
+    H.title "Käyttöliittymät harkka"
+    H.script ! A.type_ "text/html" ! A.id "user-template" $
+      H.div mempty
+  H.body $ do
+    mempty
+
+main :: IO ()
+main = simpleHTTP nullConf $ msum [
+      nullDir >> ok (toResponse mainView)
+    , dir "static" $ serveDirectory DisableBrowsing [] "public/"
+  ]
