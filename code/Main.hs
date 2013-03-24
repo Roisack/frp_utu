@@ -15,6 +15,7 @@ import Data.List (groupBy)
 import Data.Function (on)
 import qualified Text.Blaze.Html5 as H
 import Text.Blaze.Html5 (Html, (!))
+import Text.Blaze.Internal (attribute)
 import qualified Text.Blaze.Html5.Attributes as A
 import Data.Monoid
 
@@ -64,14 +65,59 @@ parseThesis path = do
 mainView :: Html
 mainView = H.docTypeHtml $ do
   H.head $ do
-    H.title "Käyttöliittymät harkka"
+    H.title title
+    H.meta ! A.charset "utf-8"
+    H.meta ! A.name "viewport"    ! A.content "width=device-width, initial-scale=1.0"
+    H.meta ! A.name "description" ! A.content ""
+    H.meta ! A.name "author"      ! A.content ""
+    H.link ! A.href "/static/bootstrap/css/bootstrap.css"            ! A.rel "stylesheet"
+    H.link ! A.href "/static/css/style.css"                          ! A.rel "stylesheet"
+    H.link ! A.href "/static/bootstrap/css/bootstrap-responsive.css" ! A.rel "stylesheet"
     H.script ! A.type_ "text/html" ! A.id "user-template" $
       H.div mempty
   H.body $ do
-    mempty
+    H.div ! A.class_ "navbar navbar-inverse navbar-fixed-top" $ do
+      H.div ! A.class_ "navbar-inner" $ do
+        H.div ! A.class_ "container-fluid" $ do
+          H.button ! A.type_ "button" ! A.class_ "btn btn-navbar" ! data_toggle "collapse" ! data_target ".nav-collapse" $ do
+            H.span ! A.class_ "icon-bar" $ mempty
+            H.span ! A.class_ "icon-bar" $ mempty
+            H.span ! A.class_ "icon-bar" $ mempty
+          H.a ! A.class_ "brand" ! A.href "#" $ title
+          H.div ! A.class_ "nav-collapse collapse" $ do
+            H.p ! A.class_ "navbar-text pull-right" $
+              "Placeholder login text. What to do with this?"
+            H.ul ! A.class_ "nav" $ do
+              H.li $ "emptymenu"
+    H.div ! A.class_ "container-fluid" $
+      H.div ! A.class_ "row-fluid" $
+        H.div ! A.class_ "span3" $
+          H.div ! A.class_ "well sidebar-nav" $
+            H.ul ! A.class_ "nav nav-list" $ do
+              H.li ! A.class_ "nav-header" $ "Sidebar"
+              H.li $ H.a ! A.href "#" $ "Link"
+              H.li $ H.a ! A.href "#" $ "Link"
+              H.li $ H.a ! A.href "#" $ "Link"
+              H.li $ H.a ! A.href "#" $ "Link"
+    H.div ! A.class_ "span9" $ do
+      H.div ! A.class_ "hero-unit" $
+        H.p "Main layout"
+      H.div ! A.class_ "row-fluid" $
+        H.div ! A.class_ "span4" $ do
+          H.p "Smaller element"
+      H.div ! A.class_ "row-fluid" $
+        H.div ! A.class_ "span4" $ do
+          H.p "Smaller element"
+      H.div ! A.class_ "row-fluid" $
+        H.div ! A.class_ "span4" $ do
+          H.p "Smaller element"
+  where
+    data_toggle = attribute "data-toggle" "data-toggle=\""
+    data_target = attribute "data-target" "data-target=\""
+    title = "Käyttöliittymät harkka"
 
 main :: IO ()
 main = simpleHTTP nullConf $ msum [
       nullDir >> ok (toResponse mainView)
-    , dir "static" $ serveDirectory DisableBrowsing [] "public/"
+    , dir "static" $ serveDirectory EnableBrowsing [] "public/"
   ]
