@@ -75,6 +75,7 @@ mainView = H.docTypeHtml $ do
     H.link ! A.href "/static/bootstrap/css/bootstrap-responsive.css" ! A.rel "stylesheet"
     H.script ! A.type_ "text/html" ! A.id "user-template" $
       H.div mempty
+    H.script ! A.type_ "application/javascript" ! A.src "./insert_in_main.js" $ mempty
   H.body $ do
     H.div ! A.class_ "navbar navbar-inverse navbar-fixed-top" $ do
       H.div ! A.class_ "navbar-inner" $ do
@@ -100,8 +101,15 @@ mainView = H.docTypeHtml $ do
               H.li $ H.a ! A.href "#" $ "Link"
               H.li $ H.a ! A.href "#" $ "Link"
     H.div ! A.class_ "span9" $ do
-      H.div ! A.class_ "hero-unit" $
+      H.div ! A.class_ "hero-unit" $ do
         H.p "Main layout"
+        H.form $ do
+          H.label "Son's wallet"
+          H.input ! A.id "wallet-son" ! A.type_ "number" ! A.value "0"
+          H.label "Father's wallet"
+          H.input ! A.id "wallet-father" ! A.type_ "number" ! A.value "10"
+          H.button "add" ! A.id "add-son"
+          H.button "remove" ! A.id "add-father"
       H.div ! A.class_ "row-fluid" $
         H.div ! A.class_ "span4" $ do
           H.p "Smaller element"
@@ -117,7 +125,7 @@ mainView = H.docTypeHtml $ do
     title = "Käyttöliittymät harkka"
 
 main :: IO ()
-main = simpleHTTP nullConf $ msum [
+main = simpleHTTP nullConf{port=25565} $ msum [
       nullDir >> ok (toResponse mainView)
     , dir "static" $ serveDirectory EnableBrowsing [] "public/"
   ]
