@@ -1,4 +1,4 @@
-{-# Language OverloadedStrings #-}
+{-# Language OverloadedStrings, TemplateHaskell #-}
 module Main where
 
 import Safe
@@ -18,6 +18,9 @@ import Text.Blaze.Html5 (Html, (!))
 import Text.Blaze.Internal (attribute)
 import qualified Text.Blaze.Html5.Attributes as A
 import Data.Monoid
+import Data.Aeson
+import Data.Aeson.TH
+import Data.Time
 
 type Course        = Text
 type Name          = Text
@@ -27,9 +30,41 @@ type Major         = Text
 type Degree        = Text
 type Year          = Int
 data Thesis        = Thesis Name [Course] deriving Show
-data Date          = Date Year Season deriving Show
-data Season        = Autumn | Spring deriving Show
-data Student       = Student Date StudentID Name StudentPoints Degree Major deriving Show
+data Date          = Date Year Season deriving (Show, Eq, Ord)
+data Season        = Autumn | Spring deriving (Show, Eq, Ord)
+data Student       = Student {
+    date :: Date
+  , studentId :: StudentID
+  , name :: Name
+  , studentPoints :: StudentPoints
+  , degree ::  Degree
+  , major :: Major
+  } deriving Show
+
+data StudentQueryRequest = StudentQueryRequest {
+    studentRequestFirstName :: Maybe Name
+  , studentRequestLastName :: Maybe Name
+  , studentRequestPoints  :: Maybe (BinOp Int)
+  , studentRequestDate  :: Maybe (BinOp Date)
+  , studentRequestDegree  :: Maybe Degree
+  , studentRequestMajor  :: Maybe Major
+  } deriving Show
+data BinOp a = AOR (BinOp a) (BinOp a) | AAND (BinOp a) (BinOp a) | AEQ a | AGT a | ALT a | AGTEQ a | ALTEQ a deriving Show
+
+evalBinOp :: (Eq a, Ord a) => a -> BinOp a -> Bool
+evalBinOp x (AEQ y) = x == y
+evalBinOp x (ALT y) = x < y
+evalBinOp x (AGT y) = x > y
+evalBinOp x (AOR a b) = evalBinOp x a || evalBinOp x b
+evalBinOp x (AAND a b) = evalBinOp x a && evalBinOp x b
+
+newtype StudentQueryResponse = StudentQueryResponse ([Student])
+$(deriveJSON id ''BinOp)
+$(deriveJSON (drop 14) ''StudentQueryRequest)
+$(deriveJSON id ''Season)
+$(deriveJSON id ''Date)
+$(deriveJSON id ''Student)
+$(deriveJSON id ''StudentQueryResponse)
 
 parseStudents :: FilePath -> IO [Student]
 parseStudents path = do
@@ -116,8 +151,30 @@ mainView = H.docTypeHtml $ do
     data_target = attribute "data-target" "data-target=\""
     title = "Käyttöliittymät harkka"
 
+queryStudents :: [Student] -> ServerPart Response
+queryStudents students = do
+  query <- decode <$> lookBS "query"
+  case query of
+       Nothing -> ok $ toResponse $ encode $ StudentQueryResponse students
+       Just query' -> ok $ toResponse $ encode $ StudentQueryResponse $ filter (buildFilter query') students
+  where
+    buildFilter query student = and . catMaybes $ [
+        ((firstName' ==) <$> studentRequestFirstName query)
+      , ((lastName' ==) <$> studentRequestLastName query)
+      , ((degree student ==) <$> studentRequestDegree query)
+      , ((major student ==) <$> studentRequestMajor query)
+      , ((evalBinOp (studentPoints student)) <$> studentRequestPoints query)
+      , ((evalBinOp (date student)) <$> studentRequestDate query)
+      ]
+      where
+        (firstName', lastName') = T.breakOn " " (name student)
+
 main :: IO ()
-main = simpleHTTP nullConf $ msum [
+main = do
+  thesis <- parseThesis "data/kandit.txt"
+  students <- parseStudents "data/opiskelijat.txt"
+  simpleHTTP nullConf $ msum [
       nullDir >> ok (toResponse mainView)
+    , dir "students" $ (queryStudents students)
     , dir "static" $ serveDirectory EnableBrowsing [] "public/"
-  ]
+    ]
