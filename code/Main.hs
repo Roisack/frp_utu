@@ -11,7 +11,7 @@ import qualified System.IO as IO
 import Control.Applicative
 import Control.Monad
 import Data.Maybe (maybe, catMaybes)
-import Data.List (groupBy)
+import Data.List (groupBy, sortBy, group)
 import Data.Function (on)
 import qualified Text.Blaze.Html5 as H
 import Text.Blaze.Html5 (Html, (!))
@@ -49,6 +49,8 @@ data StudentQueryRequest = StudentQueryRequest {
   , studentRequestDegree  :: Maybe Degree
   , studentRequestMajor  :: Maybe Major
   } deriving Show
+data StudentSortRequest = SortByDate SortOrder | SortById SortOrder | SortByName SortOrder | SortByPoints SortOrder | SortByDegree SortOrder | SortByMajor SortOrder
+data SortOrder = Asc | Desc deriving Show
 data BinOp a = AOR (BinOp a) (BinOp a) | AAND (BinOp a) (BinOp a) | AEQ a | AGT a | ALT a | AGTEQ a | ALTEQ a deriving Show
 
 evalBinOp :: (Eq a, Ord a) => a -> BinOp a -> Bool
@@ -65,6 +67,8 @@ $(deriveJSON id ''Season)
 $(deriveJSON id ''Date)
 $(deriveJSON id ''Student)
 $(deriveJSON id ''StudentQueryResponse)
+$(deriveJSON id ''SortOrder)
+$(deriveJSON id ''StudentSortRequest)
 
 parseStudents :: FilePath -> IO [Student]
 parseStudents path = do
@@ -154,10 +158,26 @@ mainView = H.docTypeHtml $ do
 queryStudents :: [Student] -> ServerPart Response
 queryStudents students = do
   query <- decode <$> lookBS "query"
+  sorting <- (maybe [] id) . decode <$> lookBS "sort"
   case query of
-       Nothing -> ok $ toResponse $ encode $ StudentQueryResponse students
-       Just query' -> ok $ toResponse $ encode $ StudentQueryResponse $ filter (buildFilter query') students
+       Nothing -> ok $ toResponse $ encode $ StudentQueryResponse $ sort sorting students
+       Just query' -> ok $ toResponse $ encode $ StudentQueryResponse $ sort sorting $ filter (buildFilter query') students
   where
+    sort (s:ss) students = concat $ map (sort ss) $ groupBy (groupFun s) $ sortBy (sortFun s) students
+    sortDir Asc = id
+    sortDir Desc = flip
+    sortFun (SortByDate dir)   = sortDir dir (compare `on` date)
+    sortFun (SortById dir)     = sortDir dir (compare `on` studentId)
+    sortFun (SortByName dir)   = sortDir dir (compare `on` name)
+    sortFun (SortByPoints dir) = sortDir dir (compare `on` studentPoints)
+    sortFun (SortByDegree dir) = sortDir dir (compare `on` degree)
+    sortFun (SortByMajor dir)  = sortDir dir (compare `on` major)
+    groupFun (SortByDate _)   = (==) `on` date
+    groupFun (SortById _)     = (==) `on` studentId
+    groupFun (SortByName _)   = (==) `on` name
+    groupFun (SortByPoints _) = (==) `on` studentPoints
+    groupFun (SortByDegree _) = (==) `on` degree
+    groupFun (SortByMajor _)  = (==) `on` major
     buildFilter query student = and . catMaybes $ [
         ((firstName' ==) <$> studentRequestFirstName query)
       , ((lastName' ==) <$> studentRequestLastName query)
@@ -178,3 +198,6 @@ main = do
     , dir "students" $ (queryStudents students)
     , dir "static" $ serveDirectory EnableBrowsing [] "public/"
     ]
+
+dynamicSort (fun:fs) xs = concat $ map (dynamicSort fs) $ group $ sortBy fun xs
+dynamicSort [] xs = xs
