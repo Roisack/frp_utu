@@ -29,7 +29,10 @@ type StudentID     = Text
 type Major         = Text
 type Degree        = Text
 type Year          = Int
-data Thesis        = Thesis Name [Course] deriving Show
+data Thesis        = Thesis {
+    thesisName :: Name
+  , thesisCourses :: [Course]
+  } deriving (Show, Eq, Ord)
 data Date          = Date Year Season deriving (Show, Eq, Ord)
 data Season        = Autumn | Spring deriving (Show, Eq, Ord)
 data Student       = Student {
@@ -69,6 +72,7 @@ $(deriveJSON id ''Student)
 $(deriveJSON id ''StudentQueryResponse)
 $(deriveJSON id ''SortOrder)
 $(deriveJSON id ''StudentSortRequest)
+$(deriveJSON (drop 6) ''Thesis)
 
 parseStudents :: FilePath -> IO [Student]
 parseStudents path = do
