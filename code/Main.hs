@@ -58,7 +58,7 @@ data StudentQueryRequest = StudentQueryRequest {
   , studentQueryDegree  :: Maybe Degree
   , studentQueryMajor  :: Maybe Major
   } deriving Show
-data StudentSortRequest = SortByDate SortOrder | SortById SortOrder | SortByName SortOrder | SortByPoints SortOrder | SortByDegree SortOrder | SortByMajor SortOrder
+data StudentSortRequest = StudentSortByDate SortOrder | StudentSortById SortOrder | StudentSortByName SortOrder | StudentSortByPoints SortOrder | StudentSortByDegree SortOrder | StudentSortByMajor SortOrder
 data SortOrder = Asc | Desc deriving Show
 data BinOp a = AOR (BinOp a) (BinOp a) | AAND (BinOp a) (BinOp a) | AEQ a | AGT a | ALT a | AGTEQ a | ALTEQ a deriving Show
 
@@ -179,18 +179,18 @@ queryStudents students = do
     sort (s:ss) students = concat $ map (sort ss) $ groupBy (groupFun s) $ sortBy (sortFun s) students
     sortDir Asc = id
     sortDir Desc = flip
-    sortFun (SortByDate dir)   = sortDir dir (compare `on` date)
-    sortFun (SortById dir)     = sortDir dir (compare `on` studentId)
-    sortFun (SortByName dir)   = sortDir dir (compare `on` name)
-    sortFun (SortByPoints dir) = sortDir dir (compare `on` studentPoints)
-    sortFun (SortByDegree dir) = sortDir dir (compare `on` degree)
-    sortFun (SortByMajor dir)  = sortDir dir (compare `on` major)
-    groupFun (SortByDate _)   = (==) `on` date
-    groupFun (SortById _)     = (==) `on` studentId
-    groupFun (SortByName _)   = (==) `on` name
-    groupFun (SortByPoints _) = (==) `on` studentPoints
-    groupFun (SortByDegree _) = (==) `on` degree
-    groupFun (SortByMajor _)  = (==) `on` major
+    sortFun (StudentSortByDate dir)   = sortDir dir (compare `on` date)
+    sortFun (StudentSortById dir)     = sortDir dir (compare `on` studentId)
+    sortFun (StudentSortByName dir)   = sortDir dir (compare `on` name)
+    sortFun (StudentSortByPoints dir) = sortDir dir (compare `on` studentPoints)
+    sortFun (StudentSortByDegree dir) = sortDir dir (compare `on` degree)
+    sortFun (StudentSortByMajor dir)  = sortDir dir (compare `on` major)
+    groupFun (StudentSortByDate _)   = (==) `on` date
+    groupFun (StudentSortById _)     = (==) `on` studentId
+    groupFun (StudentSortByName _)   = (==) `on` name
+    groupFun (StudentSortByPoints _) = (==) `on` studentPoints
+    groupFun (StudentSortByDegree _) = (==) `on` degree
+    groupFun (StudentSortByMajor _)  = (==) `on` major
     buildFilter query student = and . catMaybes $ [
         ((firstName' ==) <$> studentQueryFirstName query)
       , ((lastName' ==) <$> studentQueryLastName query)
