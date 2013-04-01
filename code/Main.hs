@@ -59,6 +59,7 @@ data StudentQueryRequest = StudentQueryRequest {
   , studentQueryMajor  :: Maybe Major
   } deriving Show
 data StudentSortRequest = StudentSortByDate SortOrder | StudentSortById SortOrder | StudentSortByName SortOrder | StudentSortByPoints SortOrder | StudentSortByDegree SortOrder | StudentSortByMajor SortOrder
+data ThesisSortRequest = ThesisSortByName SortOrder | ThesisSortByCourses SortOrder
 data SortOrder = Asc | Desc deriving Show
 data BinOp a = AOR (BinOp a) (BinOp a) | AAND (BinOp a) (BinOp a) | AEQ a | AGT a | ALT a | AGTEQ a | ALTEQ a deriving Show
 
