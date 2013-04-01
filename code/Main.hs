@@ -44,13 +44,15 @@ data Student       = Student {
   , major :: Major
   } deriving Show
 
+data StudentThesisRequest = StudentThesisRequest {
+  }
 data StudentQueryRequest = StudentQueryRequest {
-    studentRequestFirstName :: Maybe Name
-  , studentRequestLastName :: Maybe Name
-  , studentRequestPoints  :: Maybe (BinOp Int)
-  , studentRequestDate  :: Maybe (BinOp Date)
-  , studentRequestDegree  :: Maybe Degree
-  , studentRequestMajor  :: Maybe Major
+    studentQueryFirstName :: Maybe Name
+  , studentQueryLastName :: Maybe Name
+  , studentQueryPoints  :: Maybe (BinOp Int)
+  , studentQueryDate  :: Maybe (BinOp Date)
+  , studentQueryDegree  :: Maybe Degree
+  , studentQueryMajor  :: Maybe Major
   } deriving Show
 data StudentSortRequest = SortByDate SortOrder | SortById SortOrder | SortByName SortOrder | SortByPoints SortOrder | SortByDegree SortOrder | SortByMajor SortOrder
 data SortOrder = Asc | Desc deriving Show
@@ -183,12 +185,12 @@ queryStudents students = do
     groupFun (SortByDegree _) = (==) `on` degree
     groupFun (SortByMajor _)  = (==) `on` major
     buildFilter query student = and . catMaybes $ [
-        ((firstName' ==) <$> studentRequestFirstName query)
-      , ((lastName' ==) <$> studentRequestLastName query)
-      , ((degree student ==) <$> studentRequestDegree query)
-      , ((major student ==) <$> studentRequestMajor query)
-      , ((evalBinOp (studentPoints student)) <$> studentRequestPoints query)
-      , ((evalBinOp (date student)) <$> studentRequestDate query)
+        ((firstName' ==) <$> studentQueryFirstName query)
+      , ((lastName' ==) <$> studentQueryLastName query)
+      , ((degree student ==) <$> studentQueryDegree query)
+      , ((major student ==) <$> studentQueryMajor query)
+      , ((evalBinOp (studentPoints student)) <$> studentQueryPoints query)
+      , ((evalBinOp (date student)) <$> studentQueryDate query)
       ]
       where
         (firstName', lastName') = T.breakOn " " (name student)
