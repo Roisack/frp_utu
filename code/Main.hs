@@ -81,6 +81,7 @@ $(deriveJSON id ''StudentQueryResponse)
 $(deriveJSON id ''ThesisQueryResponse)
 $(deriveJSON id ''SortOrder)
 $(deriveJSON id ''StudentSortRequest)
+$(deriveJSON id ''ThesisSortRequest)
 $(deriveJSON (drop 6) ''Thesis)
 $(deriveJSON (drop 11) ''ThesisQueryRequest)
 
@@ -206,8 +207,21 @@ queryStudents students = do
 queryThesis :: [Thesis] -> ServerPart Response
 queryThesis thesis = do
   query <- decode <$> lookBS "query"
-  ok $ toResponse $ encode $ ThesisQueryResponse $ maybe thesis (\q -> filter (buildFilter q) thesis) query
+  sorting <- (maybe [] id) . decode <$> lookBS "sort"
+  ok .
+    toResponse .
+    encode .
+    ThesisQueryResponse .
+    sort sorting .
+    maybe thesis (\q -> filter (buildFilter q) thesis) $ query
   where
+    sort (s:ss) thesis = concat $ map (sort ss) $ groupBy (groupFun s) $ sortBy (sortFun s) thesis
+    sortDir Asc = id
+    sortDir Desc = flip
+    sortFun (ThesisSortByName dir) = sortDir dir (compare `on` thesisName)
+    sortFun (ThesisSortByCourses dir) = sortDir dir (compare `on` thesisCourses)
+    groupFun (ThesisSortByCourses _) = (==) `on` thesisCourses
+    groupFun (ThesisSortByName _) = (==) `on` thesisName
     buildFilter query thesis = and . catMaybes $ [
         (thesisName thesis ==) <$> thesisQueryName query
       , Just $ (S.fromList $ thesisQueryCourses query) `S.isSubsetOf` (thesisCourses thesis)
@@ -224,5 +238,3 @@ main = do
     , dir "static" $ serveDirectory EnableBrowsing [] "public/"
     ]
 
-dynamicSort (fun:fs) xs = concat $ map (dynamicSort fs) $ group $ sortBy fun xs
-dynamicSort [] xs = xs
