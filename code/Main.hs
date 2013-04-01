@@ -1,4 +1,4 @@
-{-# Language OverloadedStrings #-}
+{-# Language OverloadedStrings, TemplateHaskell #-}
 module Main where
 
 import Safe
@@ -11,13 +11,18 @@ import qualified System.IO as IO
 import Control.Applicative
 import Control.Monad
 import Data.Maybe (maybe, catMaybes)
-import Data.List (groupBy)
+import Data.List (groupBy, sortBy, group)
 import Data.Function (on)
 import qualified Text.Blaze.Html5 as H
 import Text.Blaze.Html5 (Html, (!))
 import Text.Blaze.Internal (attribute)
 import qualified Text.Blaze.Html5.Attributes as A
 import Data.Monoid
+import Data.Aeson
+import Data.Aeson.TH
+import Data.Time
+import qualified Data.Set as S
+import Data.Set (Set)
 
 type Course        = Text
 type Name          = Text
@@ -26,10 +31,59 @@ type StudentID     = Text
 type Major         = Text
 type Degree        = Text
 type Year          = Int
-data Thesis        = Thesis Name [Course] deriving Show
-data Date          = Date Year Season deriving Show
-data Season        = Autumn | Spring deriving Show
-data Student       = Student Date StudentID Name StudentPoints Degree Major deriving Show
+data Thesis        = Thesis {
+    thesisName :: Name
+  , thesisCourses :: Set Course
+  } deriving (Show, Eq, Ord)
+data Date          = Date Year Season deriving (Show, Eq, Ord)
+data Season        = Autumn | Spring deriving (Show, Eq, Ord)
+data Student       = Student {
+    date :: Date
+  , studentId :: StudentID
+  , name :: Name
+  , studentPoints :: StudentPoints
+  , degree ::  Degree
+  , major :: Major
+  } deriving Show
+
+data ThesisQueryRequest = StudentThesisRequest {
+    thesisQueryName :: Maybe Name
+  , thesisQueryCourses :: [Course]
+  }
+data StudentQueryRequest = StudentQueryRequest {
+    studentQueryFirstName :: Maybe Name
+  , studentQueryLastName :: Maybe Name
+  , studentQueryPoints  :: Maybe (BinOp Int)
+  , studentQueryDate  :: Maybe (BinOp Date)
+  , studentQueryDegree  :: Maybe Degree
+  , studentQueryMajor  :: Maybe Major
+  } deriving Show
+data StudentSortRequest = StudentSortByDate SortOrder | StudentSortById SortOrder | StudentSortByName SortOrder | StudentSortByPoints SortOrder | StudentSortByDegree SortOrder | StudentSortByMajor SortOrder
+data ThesisSortRequest = ThesisSortByName SortOrder | ThesisSortByCourses SortOrder
+data SortOrder = Asc | Desc deriving Show
+data BinOp a = AOR (BinOp a) (BinOp a) | AAND (BinOp a) (BinOp a) | AEQ a | AGT a | ALT a | AGTEQ a | ALTEQ a deriving Show
+
+evalBinOp :: (Eq a, Ord a) => a -> BinOp a -> Bool
+evalBinOp x (AEQ y) = x == y
+evalBinOp x (ALT y) = x < y
+evalBinOp x (AGT y) = x > y
+evalBinOp x (AOR a b) = evalBinOp x a || evalBinOp x b
+evalBinOp x (AAND a b) = evalBinOp x a && evalBinOp x b
+
+newtype StudentQueryResponse = StudentQueryResponse ([Student])
+newtype ThesisQueryResponse = ThesisQueryResponse ([Thesis])
+$(deriveJSON id ''BinOp)
+$(deriveJSON (drop 14) ''StudentQueryRequest)
+$(deriveJSON id ''Season)
+$(deriveJSON id ''Date)
+$(deriveJSON id ''Student)
+$(deriveJSON id ''StudentQueryResponse)
+$(deriveJSON id ''ThesisQueryResponse)
+$(deriveJSON id ''SortOrder)
+$(deriveJSON id ''StudentSortRequest)
+$(deriveJSON id ''ThesisSortRequest)
+$(deriveJSON (drop 6) ''Thesis)
+$(deriveJSON (drop 11) ''ThesisQueryRequest)
 
 parseStudents :: FilePath -> IO [Student]
 parseStudents path = do
@@ -60,7 +114,7 @@ parseThesis path = do
       n <- parseThesisCount contents'
       names <- parseThesisNames contents' n
       courses <- listToMaybe $ groupBy ((==) `on` fst) [T.breakOn " " course | course <- drop (n+1) contents']
-      return $ zipWith (\name course -> Thesis name (map snd course)) names courses
+      return $ zipWith (\name course -> Thesis name (S.fromList $ map snd course)) names courses
 
 mainView :: Html
 mainView = H.docTypeHtml $ do
@@ -116,8 +170,71 @@ mainView = H.docTypeHtml $ do
     data_target = attribute "data-target" "data-target=\""
     title = "Käyttöliittymät harkka"
 
+queryStudents :: [Student] -> ServerPart Response
+queryStudents students = do
+  query <- decode <$> lookBS "query"
+  sorting <- (maybe [] id) . decode <$> lookBS "sort"
+  case query of
+       Nothing -> ok $ toResponse $ encode $ StudentQueryResponse $ sort sorting students
+       Just query' -> ok $ toResponse $ encode $ StudentQueryResponse $ sort sorting $ filter (buildFilter query') students
+  where
+    sort (s:ss) students = concat $ map (sort ss) $ groupBy (groupFun s) $ sortBy (sortFun s) students
+    sortDir Asc = id
+    sortDir Desc = flip
+    sortFun (StudentSortByDate dir)   = sortDir dir (compare `on` date)
+    sortFun (StudentSortById dir)     = sortDir dir (compare `on` studentId)
+    sortFun (StudentSortByName dir)   = sortDir dir (compare `on` name)
+    sortFun (StudentSortByPoints dir) = sortDir dir (compare `on` studentPoints)
+    sortFun (StudentSortByDegree dir) = sortDir dir (compare `on` degree)
+    sortFun (StudentSortByMajor dir)  = sortDir dir (compare `on` major)
+    groupFun (StudentSortByDate _)   = (==) `on` date
+    groupFun (StudentSortById _)     = (==) `on` studentId
+    groupFun (StudentSortByName _)   = (==) `on` name
+    groupFun (StudentSortByPoints _) = (==) `on` studentPoints
+    groupFun (StudentSortByDegree _) = (==) `on` degree
+    groupFun (StudentSortByMajor _)  = (==) `on` major
+    buildFilter query student = and . catMaybes $ [
+        ((firstName' ==) <$> studentQueryFirstName query)
+      , ((lastName' ==) <$> studentQueryLastName query)
+      , ((degree student ==) <$> studentQueryDegree query)
+      , ((major student ==) <$> studentQueryMajor query)
+      , ((evalBinOp (studentPoints student)) <$> studentQueryPoints query)
+      , ((evalBinOp (date student)) <$> studentQueryDate query)
+      ]
+      where
+        (firstName', lastName') = T.breakOn " " (name student)
+
+queryThesis :: [Thesis] -> ServerPart Response
+queryThesis thesis = do
+  query <- decode <$> lookBS "query"
+  sorting <- (maybe [] id) . decode <$> lookBS "sort"
+  ok .
+    toResponse .
+    encode .
+    ThesisQueryResponse .
+    sort sorting .
+    maybe thesis (\q -> filter (buildFilter q) thesis) $ query
+  where
+    sort (s:ss) thesis = concat $ map (sort ss) $ groupBy (groupFun s) $ sortBy (sortFun s) thesis
+    sortDir Asc = id
+    sortDir Desc = flip
+    sortFun (ThesisSortByName dir) = sortDir dir (compare `on` thesisName)
+    sortFun (ThesisSortByCourses dir) = sortDir dir (compare `on` thesisCourses)
+    groupFun (ThesisSortByCourses _) = (==) `on` thesisCourses
+    groupFun (ThesisSortByName _) = (==) `on` thesisName
+    buildFilter query thesis = and . catMaybes $ [
+        (thesisName thesis ==) <$> thesisQueryName query
+      , Just $ (S.fromList $ thesisQueryCourses query) `S.isSubsetOf` (thesisCourses thesis)
+      ]
+
 main :: IO ()
-main = simpleHTTP nullConf $ msum [
+main = do
+  thesis <- parseThesis "data/kandit.txt"
+  students <- parseStudents "data/opiskelijat.txt"
+  simpleHTTP nullConf $ msum [
       nullDir >> ok (toResponse mainView)
+    , dir "students" $ (queryStudents students)
+    , dir "thesis" $ (queryThesis thesis)
     , dir "static" $ serveDirectory EnableBrowsing [] "public/"
-  ]
+    ]
+
