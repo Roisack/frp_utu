@@ -21,6 +21,8 @@ import Data.Monoid
 import Data.Aeson
 import Data.Aeson.TH
 import Data.Time
+import qualified Data.Set as S
+import Data.Set (Set)
 
 type Course        = Text
 type Name          = Text
@@ -31,7 +33,7 @@ type Degree        = Text
 type Year          = Int
 data Thesis        = Thesis {
     thesisName :: Name
-  , thesisCourses :: [Course]
+  , thesisCourses :: Set Course
   } deriving (Show, Eq, Ord)
 data Date          = Date Year Season deriving (Show, Eq, Ord)
 data Season        = Autumn | Spring deriving (Show, Eq, Ord)
@@ -44,7 +46,9 @@ data Student       = Student {
   , major :: Major
   } deriving Show
 
-data StudentThesisRequest = StudentThesisRequest {
+data ThesisQueryRequest = StudentThesisRequest {
+    thesisQueryName :: Maybe Name
+  , thesisQueryCourses :: [Course]
   }
 data StudentQueryRequest = StudentQueryRequest {
     studentQueryFirstName :: Maybe Name
@@ -66,15 +70,18 @@ evalBinOp x (AOR a b) = evalBinOp x a || evalBinOp x b
 evalBinOp x (AAND a b) = evalBinOp x a && evalBinOp x b
 
 newtype StudentQueryResponse = StudentQueryResponse ([Student])
+newtype ThesisQueryResponse = ThesisQueryResponse ([Thesis])
 $(deriveJSON id ''BinOp)
 $(deriveJSON (drop 14) ''StudentQueryRequest)
 $(deriveJSON id ''Season)
 $(deriveJSON id ''Date)
 $(deriveJSON id ''Student)
 $(deriveJSON id ''StudentQueryResponse)
+$(deriveJSON id ''ThesisQueryResponse)
 $(deriveJSON id ''SortOrder)
 $(deriveJSON id ''StudentSortRequest)
 $(deriveJSON (drop 6) ''Thesis)
+$(deriveJSON (drop 11) ''ThesisQueryRequest)
 
 parseStudents :: FilePath -> IO [Student]
 parseStudents path = do
@@ -105,7 +112,7 @@ parseThesis path = do
       n <- parseThesisCount contents'
       names <- parseThesisNames contents' n
       courses <- listToMaybe $ groupBy ((==) `on` fst) [T.breakOn " " course | course <- drop (n+1) contents']
-      return $ zipWith (\name course -> Thesis name (map snd course)) names courses
+      return $ zipWith (\name course -> Thesis name (S.fromList $ map snd course)) names courses
 
 mainView :: Html
 mainView = H.docTypeHtml $ do
@@ -195,6 +202,16 @@ queryStudents students = do
       where
         (firstName', lastName') = T.breakOn " " (name student)
 
+queryThesis :: [Thesis] -> ServerPart Response
+queryThesis thesis = do
+  query <- decode <$> lookBS "query"
+  ok $ toResponse $ encode $ ThesisQueryResponse $ maybe thesis (\q -> filter (buildFilter q) thesis) query
+  where
+    buildFilter query thesis = and . catMaybes $ [
+        (thesisName thesis ==) <$> thesisQueryName query
+      , Just $ (S.fromList $ thesisQueryCourses query) `S.isSubsetOf` (thesisCourses thesis)
+      ]
+
 main :: IO ()
 main = do
   thesis <- parseThesis "data/kandit.txt"
@@ -202,6 +219,7 @@ main = do
   simpleHTTP nullConf $ msum [
       nullDir >> ok (toResponse mainView)
     , dir "students" $ (queryStudents students)
+    , dir "thesis" $ (queryThesis thesis)
     , dir "static" $ serveDirectory EnableBrowsing [] "public/"
     ]
 
