@@ -12,6 +12,10 @@ $(document).ready(function() {
         // Like above
     }
 
+    function writeCourseHeaders() {
+        // Like above
+    }
+
     $("#form_submit").click(function() {
         //if (request) {
         //    request.abort();

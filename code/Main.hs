@@ -162,8 +162,8 @@ mainView = H.docTypeHtml $ do
           H.button ! A.id "mode_students" $ "Students"
           H.button ! A.id "mode_degrees" $ "Degrees"
           H.button ! A.id "mode_courses" $ "Courses"
-        H.div ! A.id "controlpanel" $ do
-          H.h2 $ "Set filter settings"
+        H.div ! A.id "controlpanel" ! A.class_ "buttoncontainer" $ do
+          H.h2 $ "Filters"
           H.form ! A.id "coolform" $ do
             H.input ! A.type_ "text" ! A.placeholder "Enter filter text" ! A.id "filterstring"
             H.p $ "Apply filter for"
@@ -193,7 +193,7 @@ mainView = H.docTypeHtml $ do
               H.li $ H.a ! A.href "#" $ "Link"
               H.li $ H.a ! A.href "#" $ "Link"
     H.div ! A.id "footer" $ do
-      H.span $ "Clever footer text"
+      H.span $ ""
   where
     data_toggle = attribute "data-toggle" "data-toggle=\""
     data_target = attribute "data-target" "data-target=\""
