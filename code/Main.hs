@@ -10,7 +10,7 @@ import qualified Data.Vector as V
 import qualified System.IO as IO
 import Control.Applicative
 import Control.Monad
-import Data.Maybe (maybe, catMaybes)
+import Data.Maybe (maybe, catMaybes, listToMaybe)
 import Data.List (groupBy, sortBy, group)
 import Data.Function (on)
 import qualified Text.Blaze.Html5 as H
@@ -201,11 +201,11 @@ mainView = H.docTypeHtml $ do
 
 queryStudents :: [Student] -> ServerPart Response
 queryStudents students = do
-  query <- decode <$> lookBS "query"
-  sorting <- (maybe [] id) . decode <$> lookBS "sort"
+  query <- join . fmap decode . listToMaybe <$> lookBSs "query"
+  -- sorting <- fmap ((maybe [] id) . decode) . listToMaybe <$> lookBSs "sort"
   case query of
-       Nothing -> ok $ toResponse $ encode $ StudentQueryResponse $ sort sorting students
-       Just query' -> ok $ toResponse $ encode $ StudentQueryResponse $ sort sorting $ filter (buildFilter query') students
+       Nothing -> ok $ toResponse $ encode $ StudentQueryResponse $ students
+       Just query' -> ok $ toResponse $ encode $ StudentQueryResponse $ filter (buildFilter query') students
   where
     sort (s:ss) students = concat $ map (sort ss) $ groupBy (groupFun s) $ sortBy (sortFun s) students
     sortDir Asc = id
