@@ -73,7 +73,7 @@ evalBinOp x (AAND a b) = evalBinOp x a && evalBinOp x b
 newtype StudentQueryResponse = StudentQueryResponse ([Student])
 newtype ThesisQueryResponse = ThesisQueryResponse ([Thesis])
 $(deriveJSON id ''BinOp)
-$(deriveJSON (drop 14) ''StudentQueryRequest)
+$(deriveJSON (drop 12) ''StudentQueryRequest)
 $(deriveJSON id ''Season)
 $(deriveJSON id ''Date)
 $(deriveJSON id ''Student)
@@ -231,10 +231,12 @@ main :: IO ()
 main = do
   thesis <- parseThesis "data/kandit.txt"
   students <- parseStudents "data/opiskelijat.txt"
-  simpleHTTP nullConf $ msum [
-      nullDir >> ok (toResponse mainView)
-    , dir "students" $ (queryStudents students)
-    , dir "thesis" $ (queryThesis thesis)
-    , dir "static" $ serveDirectory EnableBrowsing [] "public/"
-    ]
+  simpleHTTP nullConf $ do
+    decodeBody (defaultBodyPolicy "/tmp" 4096 4096 4096)
+    msum [
+        nullDir >> ok (toResponse mainView)
+      , dir "students" $ (queryStudents students)
+      , dir "thesis" $ (queryThesis thesis)
+      , dir "static" $ serveDirectory EnableBrowsing [] "public/"
+      ]
 
