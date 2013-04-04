@@ -146,19 +146,8 @@ mainView = H.docTypeHtml $ do
               "Placeholder login text. What to do with this?"
             H.ul ! A.class_ "nav" $ do
               H.li $ "emptymenu"
-    H.div ! A.class_ "container-fluid" $
-      H.div ! A.class_ "row-fluid" $
-        H.div ! A.class_ "span3" $
-          H.div ! A.class_ "well sidebar-nav" $
-            H.ul ! A.class_ "nav nav-list" $ do
-              H.li ! A.class_ "nav-header" $ "Sidebar"
-              H.li $ H.a ! A.href "#" $ "Link"
-              H.li $ H.a ! A.href "#" $ "Link"
-              H.li $ H.a ! A.href "#" $ "Link"
-              H.li $ H.a ! A.href "#" $ "Link"
-    H.div ! A.class_ "span9" $ do
-      H.div ! A.class_ "hero-unit" $ do
-        H.p "Main layout"
+    H.div ! A.id "left_box" $ do
+      H.div ! A.id "databox" $ do
         H.table ! A.id "datatable" $ do
           H.tr $ do
             H.th $ H.a ! A.href "#" ! A.id "sortbynumber" $ "Number"
@@ -167,12 +156,16 @@ mainView = H.docTypeHtml $ do
             H.th $ H.a ! A.href "#" ! A.id "sortbypoints" $ "Points"
             H.th $ H.a ! A.href "#" ! A.id "sortbydegree" $ "Degree"
             H.th $ H.a ! A.href "#" ! A.id "sortbymajor" $ "Major"
-      H.div ! A.class_ "row-fluid" $
-        H.div ! A.class_ "controlpanel" $ do
+    H.div ! A.id "right_box" $
+      H.div ! A.id "settings" $ do
+        H.div ! A.id "table_mode" $ do
+          H.button ! A.id "mode_students" $ "Students"
+          H.button ! A.id "mode_degrees" $ "Degrees"
+          H.button ! A.id "mode_courses" $ "Courses"
+        H.div ! A.id "controlpanel" $ do
           H.h2 $ "Set filter settings"
-          H.form ! A.method "post" ! A.id "coolform" $ do
+          H.form ! A.id "coolform" $ do
             H.input ! A.type_ "text" ! A.placeholder "Enter filter text" ! A.id "filterstring"
-            H.button ! A.id "coolform_submit" $ "Search"
             H.p $ "Apply filter for"
             H.label ! A.type_ "text" $ "First name"
             H.input ! A.type_ "checkbox" ! A.id "firstName"
@@ -186,14 +179,21 @@ mainView = H.docTypeHtml $ do
             H.input ! A.type_ "checkbox" ! A.id "points"
             H.label ! A.type_ "text" $ "Major"
             H.input ! A.type_ "checkbox" ! A.id "major"
-
-          H.span ! A.id "state" $ "Spacebar status "
+            H.br
+            H.br
+            H.button ! A.id "form_submit" $ "Execute"
+    H.div ! A.id "nav_box" ! A.class_ "container-fluid" $
       H.div ! A.class_ "row-fluid" $
-        H.div ! A.class_ "span4" $ do
-          H.p "Smaller element"
-      H.div ! A.class_ "row-fluid" $
-        H.div ! A.class_ "span4" $ do
-          H.p "Smaller element"
+        H.div ! A.class_ "span3" $
+          H.div ! A.class_ "well sidebar-nav" $
+            H.ul ! A.class_ "nav nav-list" $ do
+              H.li ! A.class_ "nav-header" $ "Sidebar"
+              H.li $ H.a ! A.href "#" $ "Link"
+              H.li $ H.a ! A.href "#" $ "Link"
+              H.li $ H.a ! A.href "#" $ "Link"
+              H.li $ H.a ! A.href "#" $ "Link"
+    H.div ! A.id "footer" $ do
+      H.span $ "Clever footer text"
   where
     data_toggle = attribute "data-toggle" "data-toggle=\""
     data_target = attribute "data-target" "data-target=\""
