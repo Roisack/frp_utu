@@ -127,7 +127,10 @@ mainView = H.docTypeHtml $ do
     H.link ! A.href "/static/bootstrap/css/bootstrap.css"            ! A.rel "stylesheet"
     H.link ! A.href "/static/css/style.css"                          ! A.rel "stylesheet"
     H.link ! A.href "/static/bootstrap/css/bootstrap-responsive.css" ! A.rel "stylesheet"
-    H.script ! A.type_ "text/html" ! A.id "user-template" $
+  H.script ! A.type_ "application/javascript" ! A.src "/static/jquery/jquery-1.9.1.min.js" $ mempty
+  H.script ! A.type_ "application/javascript" ! A.src "/static/bacon/js/Bacon.js" $ mempty
+  H.script ! A.type_ "application/javascript" ! A.src "/static/js/doThings.js" $ mempty
+  H.script ! A.type_ "text/html" ! A.id "user-template" $
       H.div mempty
   H.body $ do
     H.div ! A.class_ "navbar navbar-inverse navbar-fixed-top" $ do
@@ -154,11 +157,37 @@ mainView = H.docTypeHtml $ do
               H.li $ H.a ! A.href "#" $ "Link"
               H.li $ H.a ! A.href "#" $ "Link"
     H.div ! A.class_ "span9" $ do
-      H.div ! A.class_ "hero-unit" $
+      H.div ! A.class_ "hero-unit" $ do
         H.p "Main layout"
+        H.table ! A.id "datatable" $ do
+          H.tr $ do
+            H.th $ H.a ! A.href "#" ! A.id "sortbynumber" $ "Number"
+            H.th $ H.a ! A.href "#" ! A.id "sortbyfname" $ "First name"
+            H.th $ H.a ! A.href "#" ! A.id "sortbylname" $ "Last name"
+            H.th $ H.a ! A.href "#" ! A.id "sortbypoints" $ "Points"
+            H.th $ H.a ! A.href "#" ! A.id "sortbydegree" $ "Degree"
+            H.th $ H.a ! A.href "#" ! A.id "sortbymajor" $ "Major"
       H.div ! A.class_ "row-fluid" $
-        H.div ! A.class_ "span4" $ do
-          H.p "Smaller element"
+        H.div ! A.class_ "controlpanel" $ do
+          H.h2 $ "Set filter settings"
+          H.form ! A.method "post" ! A.id "coolform" $ do
+            H.input ! A.type_ "text" ! A.placeholder "Enter filter text" ! A.id "filterstring"
+            H.button ! A.id "coolform_submit" $ "Search"
+            H.p $ "Apply filter for"
+            H.label ! A.type_ "text" $ "First name"
+            H.input ! A.type_ "checkbox" ! A.id "firstName"
+            H.label ! A.type_ "text" $ "Last name"
+            H.input ! A.type_ "checkbox" ! A.id "lastName"
+            H.label ! A.type_ "text" $ "Student number"
+            H.input ! A.type_ "checkbox" ! A.id "studentNumber"
+            H.label ! A.type_ "text" $ "Degree"
+            H.input ! A.type_ "checkbox" ! A.id "degree"
+            H.label ! A.type_ "text" $ "Points"
+            H.input ! A.type_ "checkbox" ! A.id "points"
+            H.label ! A.type_ "text" $ "Major"
+            H.input ! A.type_ "checkbox" ! A.id "major"
+
+          H.span ! A.id "state" $ "Spacebar status "
       H.div ! A.class_ "row-fluid" $
         H.div ! A.class_ "span4" $ do
           H.p "Smaller element"
@@ -231,7 +260,7 @@ main :: IO ()
 main = do
   thesis <- parseThesis "data/kandit.txt"
   students <- parseStudents "data/opiskelijat.txt"
-  simpleHTTP nullConf $ msum [
+  simpleHTTP nullConf{port=25565} $ msum [
       nullDir >> ok (toResponse mainView)
     , dir "students" $ (queryStudents students)
     , dir "thesis" $ (queryThesis thesis)
