@@ -1,7 +1,17 @@
 $(document).ready(function() {
 
-    $("#nav_box").hide();
-
+    $("#navigation").hide();
+    $("#databox").html('<table cellpadding="0" cellspacing="0" border="0" class="display" id="outputdata"></table>');
+    $("#outputdata").dataTable( { 
+        "aoColumns": [
+        { "sTitle": "studentnumber" },
+        { "sTitle": "name" },
+        { "sTitle": "degree" },
+        { "sTitle": "major" },
+        { "sTitle": "points"},
+        { "sTitle": "date"}
+        ]
+   });
     // Inserts the <th> tags required for listing students in the main databox
     function writeStudentHeaders() {
         // Call Happstack and ask blaze-html to nicely give us a new table with appropriate <th> tags
@@ -17,9 +27,6 @@ $(document).ready(function() {
     }
 
     $("#form_submit").click(function() {
-        //if (request) {
-        //    request.abort();
-        //}
 
         //var $form = $("#coolform");
         //var $inputs = $form.find("input", "text", "checkbox");
@@ -27,22 +34,54 @@ $(document).ready(function() {
 
         //$inputs.prop("disabled", true);
 
-        var data1;
-        data1 += $("#filterstring").val();
-        data1 += $("#firstname").val();
-        data1 += $("#lastname").val();
-        console.log(data1);
-
-        var response;
         //console.log(serializedData);
 
-        $.ajax({
+        var data1 = {
+            FirstName: "",
+            LastName: "",
+            Points: null,
+            Degree: "",
+            Date: {
+                AEQ: [2010, ""]
+            },
+            Major: ""
+        };
+
+        var output = $.ajax({
             url: "/students",
+            dataType: "json",
             type: "post",
             data: data1,
-            success: function() {alert("success");},
+            success: function(obj) {
+                $("#databox").empty();
+
+                $("#databox").html('<table cellpadding="0" cellspacing="0" border="0" class="display" id="outputdata"></table>');
+                var dtable = $("#outputdata").dataTable( { 
+                    "aoColumns": [
+                        { "sTitle": "studentnumber" },
+                        { "sTitle": "name" },
+                        { "sTitle": "degree" },
+                        { "sTitle": "major" },
+                        { "sTitle": "points"},
+                        { "sTitle": "date"}
+                        ]
+                });
+
+                $.each(obj, function(i, item) {
+                    //console.log(obj[i].name);
+                    //var template = "<td>{{studentId}}</td><td>{{name}}</td><td>{{degree}}</td><td>{{major}}</td><td>{{date.first}}</td>";
+                    //textData += "[ {{studentId}}, {{name}}, {{degree}}, {{major}}, {{date}} ]"
+                    //var html = Mustache.to_html(template, obj[i]);
+                    dtable.fnAddData([ obj[i].studentId, obj[i].name, obj[i].degree, obj[i].major, obj[i].date, obj[i].studentPoints]);
+                });
+            },
             error: function() {alert("no go");}
         });
+
+        //var json_object = JSON.parse(output);
+        //console.log(json_object);
+        
+        return false;
     });
 
     // When the user wants to view degrees

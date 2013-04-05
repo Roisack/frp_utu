@@ -129,6 +129,8 @@ mainView = H.docTypeHtml $ do
     H.link ! A.href "/static/bootstrap/css/bootstrap-responsive.css" ! A.rel "stylesheet"
   H.script ! A.type_ "application/javascript" ! A.src "/static/jquery/jquery-1.9.1.min.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "/static/bacon/js/Bacon.js" $ mempty
+  H.script ! A.type_ "application/javascript" ! A.src "/static/mustache/mustache.js" $ mempty
+  H.script ! A.type_ "application/javascript" ! A.src "http://datatables.net/download/build/jquery.dataTables.nightly.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "/static/js/doThings.js" $ mempty
   H.script ! A.type_ "text/html" ! A.id "user-template" $
       H.div mempty
@@ -146,23 +148,23 @@ mainView = H.docTypeHtml $ do
               "Placeholder login text. What to do with this?"
             H.ul ! A.class_ "nav" $ do
               H.li $ "emptymenu"
-    H.div ! A.id "left_box" $ do
-      H.div ! A.id "databox" $ do
-        H.table ! A.id "datatable" $ do
-          H.tr $ do
-            H.th $ H.a ! A.href "#" ! A.id "sortbynumber" $ "Number"
-            H.th $ H.a ! A.href "#" ! A.id "sortbyfname" $ "First name"
-            H.th $ H.a ! A.href "#" ! A.id "sortbylname" $ "Last name"
-            H.th $ H.a ! A.href "#" ! A.id "sortbypoints" $ "Points"
-            H.th $ H.a ! A.href "#" ! A.id "sortbydegree" $ "Degree"
-            H.th $ H.a ! A.href "#" ! A.id "sortbymajor" $ "Major"
-    H.div ! A.id "right_box" $
-      H.div ! A.id "settings" $ do
+    H.div ! A.class_ "container-fluid" $
+      H.div ! A.class_ "row-fluid" $
+        H.div ! A.class_ "span3" $
+          H.div ! A.class_ "well sidebar-nav" $
+            H.ul ! A.class_ "nav nav-list" $ do
+              H.li ! A.class_ "nav-header" $ "Sidebar"
+              H.li $ H.a ! A.href "#" $ "Link"
+              H.li $ H.a ! A.href "#" $ "Link"
+              H.li $ H.a ! A.href "#" $ "Link"
+              H.li $ H.a ! A.href "#" $ "Link"
+    H.div ! A.class_ "span9" $ do
+      H.div ! A.class_ "row-fluid" $ do
         H.div ! A.id "table_mode" $ do
           H.button ! A.id "mode_students" $ "Students"
           H.button ! A.id "mode_degrees" $ "Degrees"
           H.button ! A.id "mode_courses" $ "Courses"
-        H.div ! A.id "controlpanel" ! A.class_ "buttoncontainer" $ do
+        H.div ! A.id "controlpanel" $ do
           H.h2 $ "Filters"
           H.form ! A.id "coolform" $ do
             H.input ! A.type_ "text" ! A.placeholder "Enter filter text" ! A.id "filterstring"
@@ -181,19 +183,15 @@ mainView = H.docTypeHtml $ do
             H.input ! A.type_ "checkbox" ! A.id "major"
             H.br
             H.br
-            H.button ! A.id "form_submit" $ "Execute"
-    H.div ! A.id "nav_box" ! A.class_ "container-fluid" $
+            H.button ! A.id "form_submit" ! A.class_ "btn" $ "Execute"
+      H.div ! A.class_ "hero-unit" ! A.id "databox" $ do
+        H.p $ "stuff here"
       H.div ! A.class_ "row-fluid" $
-        H.div ! A.class_ "span3" $
-          H.div ! A.class_ "well sidebar-nav" $
-            H.ul ! A.class_ "nav nav-list" $ do
-              H.li ! A.class_ "nav-header" $ "Sidebar"
-              H.li $ H.a ! A.href "#" $ "Link"
-              H.li $ H.a ! A.href "#" $ "Link"
-              H.li $ H.a ! A.href "#" $ "Link"
-              H.li $ H.a ! A.href "#" $ "Link"
-    H.div ! A.id "footer" $ do
-      H.span $ ""
+        H.div ! A.class_ "span4" $ do
+          H.p "Smaller element"
+      H.div ! A.class_ "row-fluid" $
+        H.div ! A.class_ "span4" $ do
+          H.p "Smaller element"
   where
     data_toggle = attribute "data-toggle" "data-toggle=\""
     data_target = attribute "data-target" "data-target=\""
