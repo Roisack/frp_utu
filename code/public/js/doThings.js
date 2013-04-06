@@ -1,8 +1,9 @@
 $(document).ready(function() {
 
-    $("#navigation").hide();
+    var active_mode = "students";
+
     $("#databox").html('<table cellpadding="0" cellspacing="0" border="0" class="display" id="outputdata"></table>');
-    $("#outputdata").dataTable( { 
+    var dtable = $("#outputdata").dataTable( { 
         "aoColumns": [
         { "sTitle": "studentnumber" },
         { "sTitle": "name" },
@@ -12,6 +13,7 @@ $(document).ready(function() {
         { "sTitle": "date"}
         ]
    });
+
     // Inserts the <th> tags required for listing students in the main databox
     function writeStudentHeaders() {
         // Call Happstack and ask blaze-html to nicely give us a new table with appropriate <th> tags
@@ -26,6 +28,18 @@ $(document).ready(function() {
         // Like above
     }
 
+    $('body').on('click', '#outputdata tbody tr td', function() {
+        var tr = $(this).closest("tr");
+        var number = tr.find("td:first").text();
+        var name = tr.find("td:nth-child(2)").text();
+        $("#infoModalHeader").html("Student");
+        $("#infoModalBody").html("<p>" + number + ": " + name + "</p>");
+        $("#infoModalFooter").html('"<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>"');
+        $("#infoModal").modal({
+            show: true
+        });
+    });
+
     $("#form_submit").click(function() {
 
         //var $form = $("#coolform");
@@ -36,44 +50,63 @@ $(document).ready(function() {
 
         //console.log(serializedData);
 
-        var data1 = {
-            FirstName: "",
-            LastName: "",
-            Points: null,
-            Degree: "",
-            Date: {
-                AEQ: [2010, ""]
-            },
-            Major: ""
-        };
+        console.log(active_mode);
+
+        var data_for_post;
+        var url_for_post = "";
+        if (active_mode == "students") {
+            url_for_post = "/students";
+            data_for_post = {
+                FirstName: "",
+                LastName: "",
+                Points: null,
+                Degree: "",
+                Date: {
+                    AEQ: [2010, ""]
+                },
+                Major: ""
+            };
+        } else if (active_mode == "degrees") {
+            url_for_post = "/degrees";
+            data_for_post = {
+            }; 
+        } else if (active_mode == "courses") {
+            url_for_post = "/courses";
+            data_for_post = {
+            };
+        }
 
         var output = $.ajax({
-            url: "/students",
+            url: url_for_post,
             dataType: "json",
             type: "post",
-            data: data1,
+            data: data_for_post,
             success: function(obj) {
                 $("#databox").empty();
 
                 $("#databox").html('<table cellpadding="0" cellspacing="0" border="0" class="display" id="outputdata"></table>');
-                var dtable = $("#outputdata").dataTable( { 
-                    "aoColumns": [
-                        { "sTitle": "studentnumber" },
-                        { "sTitle": "name" },
-                        { "sTitle": "degree" },
-                        { "sTitle": "major" },
-                        { "sTitle": "points"},
-                        { "sTitle": "date"}
-                        ]
-                });
+                if (active_mode == "students") {
+                    var dtable = $("#outputdata").dataTable( { 
+                        "aoColumns": [
+                            { "sTitle": "studentnumber" },
+                            { "sTitle": "name" },
+                            { "sTitle": "degree" },
+                            { "sTitle": "major" },
+                            { "sTitle": "points"},
+                            { "sTitle": "date"}
+                            ]
+                    });
 
-                $.each(obj, function(i, item) {
-                    //console.log(obj[i].name);
-                    //var template = "<td>{{studentId}}</td><td>{{name}}</td><td>{{degree}}</td><td>{{major}}</td><td>{{date.first}}</td>";
-                    //textData += "[ {{studentId}}, {{name}}, {{degree}}, {{major}}, {{date}} ]"
-                    //var html = Mustache.to_html(template, obj[i]);
-                    dtable.fnAddData([ obj[i].studentId, obj[i].name, obj[i].degree, obj[i].major, obj[i].date, obj[i].studentPoints]);
-                });
+                    $.each(obj, function(i, item) {
+                        //console.log(obj[i].name);
+                        //var template = "<td>{{studentId}}</td><td>{{name}}</td><td>{{degree}}</td><td>{{major}}</td><td>{{date.first}}</td>";
+                        //textData += "[ {{studentId}}, {{name}}, {{degree}}, {{major}}, {{date}} ]"
+                        //var html = Mustache.to_html(template, obj[i]);
+                        dtable.fnAddData([ obj[i].studentId, obj[i].name, obj[i].degree, obj[i].major, obj[i].date, obj[i].studentPoints]);
+                    });
+                } else if (active_mode == "degrees") {
+                } else if (active_mode == "courses") {
+                }
             },
             error: function() {alert("no go");}
         });
@@ -86,43 +119,24 @@ $(document).ready(function() {
 
     // When the user wants to view degrees
     $("#mode_degrees").asEventStream("click").subscribe(function(event) {
-        writeDegreeHeaders();
+        active_mode = "degrees";
     });
 
     // When the user wants to view students
     $("#mode_students").asEventStream("click").subscribe(function(event) {
-        writeStudentHeaders();
+        active_mode = "students";
     });
 
     // When user wants to view courses
     $("#mode_courses").asEventStream("click").subscribe(function(event) {
-        writeCourseHeaders();
+        active_mode = "courses";
     });
 
-    $("#sortbyfname").asEventStream("click").subscribe(function(event) {
-        // When clicked, data should be sorted according to this setting
-        // When clicked again, change sorting order from ascending to descenting
-        // Possibly by an ajax call, reload all data and ask Haskell to output it in the correct form?
-        // All the while the filter text should be remembered, so no extra names should be added
-    })
-
-    $("#sortbylname").asEventStream("click").subscribe(function(event) {
-    })
-
-    $("#sortbynumber").asEventStream("click").subscribe(function(event) {
-    })
-
-    $("#sortbydegree").asEventStream("click").subscribe(function(event) {
-    })
-
-    $("#sortbymajor").asEventStream("click").subscribe(function(event) {
-    })
-
-    $("#sortbypoints").asEventStream("click").subscribe(function(event) {
-    })
-
-    $("#sortbyx").asEventStream("click").subscribe(function(event) {
-    })
+    $("#outputdata tr").asEventStream("click").subscribe(function(event) {
+        $(this).find("td").each(function(cellIndex) {
+            console.log($(this).text());
+        });
+    });
 
     $("#student_link").asEventStream("click").subscribe(function(event) {
         // When a student is clicked, the data should change to display the records of this student

@@ -129,12 +129,20 @@ mainView = H.docTypeHtml $ do
     H.link ! A.href "/static/bootstrap/css/bootstrap-responsive.css" ! A.rel "stylesheet"
   H.script ! A.type_ "application/javascript" ! A.src "/static/jquery/jquery-1.9.1.min.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "/static/bacon/js/Bacon.js" $ mempty
+  H.script ! A.type_ "application/javascript" ! A.src "/static/bootstrap/js/bootstrap.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "/static/mustache/mustache.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "http://datatables.net/download/build/jquery.dataTables.nightly.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "/static/js/doThings.js" $ mempty
   H.script ! A.type_ "text/html" ! A.id "user-template" $
       H.div mempty
   H.body $ do
+    H.div ! A.id "infoModal" ! A.class_ "modal hide fade" $ do
+      H.div ! A.class_ "modal-header" ! A.id "infoModalHeader" $ do
+        H.p "modal header content"
+      H.div ! A.class_ "modal-body" ! A.id "infoModalBody" $ do
+        H.p "modal body"
+      H.div ! A.class_ "modal-footer" ! A.id "infoModalFooter" $ do
+        H.p "modal footer"
     H.div ! A.class_ "navbar navbar-inverse navbar-fixed-top" $ do
       H.div ! A.class_ "navbar-inner" $ do
         H.div ! A.class_ "container-fluid" $ do
@@ -161,9 +169,9 @@ mainView = H.docTypeHtml $ do
     H.div ! A.class_ "span9" $ do
       H.div ! A.class_ "row-fluid" $ do
         H.div ! A.id "table_mode" $ do
-          H.button ! A.id "mode_students" $ "Students"
-          H.button ! A.id "mode_degrees" $ "Degrees"
-          H.button ! A.id "mode_courses" $ "Courses"
+          H.button ! A.id "mode_students" ! A.class_ "btn" $ "Students"
+          H.button ! A.id "mode_degrees" ! A.class_ "btn" $ "Degrees"
+          H.button ! A.id "mode_courses" ! A.class_ "btn" $ "Courses"
         H.div ! A.id "controlpanel" $ do
           H.h2 $ "Filters"
           H.form ! A.id "coolform" $ do
