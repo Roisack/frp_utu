@@ -183,24 +183,12 @@ mainView = H.docTypeHtml $ do
       H.div ! A.class_ "row-fluid" $ do
         H.div ! A.id "controlpanel" $ do
           H.h2 $ "Filters"
-          H.form ! A.id "coolform" $ do
-            H.input ! A.type_ "text" ! A.placeholder "Enter filter text" ! A.id "filterstring"
-            H.p $ "Apply filter for"
-            H.label ! A.type_ "text" $ "First name"
-            H.input ! A.type_ "checkbox" ! A.id "firstName"
-            H.label ! A.type_ "text" $ "Last name"
-            H.input ! A.type_ "checkbox" ! A.id "lastName"
-            H.label ! A.type_ "text" $ "Student number"
-            H.input ! A.type_ "checkbox" ! A.id "studentNumber"
-            H.label ! A.type_ "text" $ "Degree"
-            H.input ! A.type_ "checkbox" ! A.id "degree"
-            H.label ! A.type_ "text" $ "Points"
-            H.input ! A.type_ "checkbox" ! A.id "points"
-            H.label ! A.type_ "text" $ "Major"
-            H.input ! A.type_ "checkbox" ! A.id "major"
-            H.br
-            H.br
-            H.button ! A.id "form_submit" ! A.class_ "btn" $ "Execute"
+          H.form ! A.id "coolform" ! A.class_ "form-inline" $ do
+            H.input ! A.type_ "text" ! A.class_ "input-small" ! A.placeholder "Firstname" ! A.name "FirstName"
+            H.input ! A.type_ "text" ! A.class_ "input-small" ! A.placeholder "Lastname" ! A.name "LastName"
+            H.input ! A.type_ "text" ! A.class_ "input-small" ! A.placeholder "Degree" ! A.name "Degree"
+            H.input ! A.type_ "text" ! A.class_ "input-small" ! A.placeholder "Major" ! A.name "Major"
+            H.button ! A.id "form_submit" ! A.class_ "btn" $ "Filter"
       H.div ! A.class_ "hero-unit" ! A.id "databox" $ do
         H.p $ "stuff here"
       H.div ! A.class_ "row-fluid" $
