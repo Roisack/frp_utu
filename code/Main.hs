@@ -5,6 +5,7 @@ import Safe
 import Happstack.Server
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.IO as TI
+import qualified Data.Text.Lazy.Encoding as E
 import Data.Text.Lazy (Text)
 import qualified Data.Vector as V
 import qualified System.IO as IO
@@ -46,45 +47,17 @@ data Student       = Student {
   , degree ::  Degree
   , major :: Major
   } deriving Show
+newtype DatatableStudent = DatatableStudent Student
 
-data ThesisQueryRequest = StudentThesisRequest {
-    thesisQueryName :: Maybe Name
-  , thesisQueryCourses :: [Course]
-  }
-data StudentQueryRequest = StudentQueryRequest {
-    studentQueryFirstName :: Maybe Name
-  , studentQueryLastName :: Maybe Name
-  , studentQueryPoints  :: Maybe (BinOp Int)
-  , studentQueryDate  :: Maybe (BinOp Date)
-  , studentQueryDegree  :: Maybe Degree
-  , studentQueryMajor  :: Maybe Major
-  } deriving Show
-data StudentSortRequest = StudentSortByDate SortOrder | StudentSortById SortOrder | StudentSortByName SortOrder | StudentSortByPoints SortOrder | StudentSortByDegree SortOrder | StudentSortByMajor SortOrder
-data ThesisSortRequest = ThesisSortByName SortOrder | ThesisSortByCourses SortOrder
-data SortOrder = Asc | Desc deriving Show
-data BinOp a = AOR (BinOp a) (BinOp a) | AAND (BinOp a) (BinOp a) | AEQ a | AGT a | ALT a | AGTEQ a | ALTEQ a deriving Show
-
-evalBinOp :: (Eq a, Ord a) => a -> BinOp a -> Bool
-evalBinOp x (AEQ y) = x == y
-evalBinOp x (ALT y) = x < y
-evalBinOp x (AGT y) = x > y
-evalBinOp x (AOR a b) = evalBinOp x a || evalBinOp x b
-evalBinOp x (AAND a b) = evalBinOp x a && evalBinOp x b
-
-newtype StudentQueryResponse = StudentQueryResponse ([Student])
-newtype ThesisQueryResponse = ThesisQueryResponse ([Thesis])
-$(deriveJSON id ''BinOp)
-$(deriveJSON (drop 12) ''StudentQueryRequest)
-$(deriveJSON id ''Season)
-$(deriveJSON id ''Date)
-$(deriveJSON id ''Student)
-$(deriveJSON id ''StudentQueryResponse)
-$(deriveJSON id ''ThesisQueryResponse)
-$(deriveJSON id ''SortOrder)
-$(deriveJSON id ''StudentSortRequest)
-$(deriveJSON id ''ThesisSortRequest)
-$(deriveJSON (drop 6) ''Thesis)
-$(deriveJSON (drop 11) ''ThesisQueryRequest)
+instance ToJSON DatatableStudent where
+  toJSON (DatatableStudent student) = toJSON [
+        studentId student
+      , name student
+      , degree student
+      , major student
+      , T.pack $ show $ studentPoints student
+      , T.pack $ drop 5 $ show $ date student
+    ]
 
 parseStudents :: FilePath -> IO [Student]
 parseStudents path = do
@@ -131,8 +104,8 @@ userModal = H.div ! A.class_ "modal hide fade" $ do
     data_dismiss = attribute "data-dismiss" "data-dismiss=\""
     aria_hidden = attribute "aria-hidden" "aria-hidden=\""
 
-mainView :: Html
-mainView = H.docTypeHtml $ do
+mainView :: [Student] -> Html
+mainView students = H.docTypeHtml $ do
   H.head $ do
     H.title title
     H.meta ! A.charset "utf-8"
@@ -143,6 +116,8 @@ mainView = H.docTypeHtml $ do
     H.link ! A.href "/static/css/style.css"                          ! A.rel "stylesheet"
     H.link ! A.href "/static/bootstrap/css/bootstrap-responsive.css" ! A.rel "stylesheet"
     H.link ! A.href "http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" ! A.rel "stylesheet"
+  H.script ! A.type_ "application/javascript" $
+    H.toHtml $ "var studentData = " `T.append` (E.decodeUtf8 $ encode $ map DatatableStudent students)
   H.script ! A.type_ "application/javascript" ! A.src "/static/jquery/jquery-1.9.1.min.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "http://code.jquery.com/ui/1.10.2/jquery-ui.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "/static/bacon/js/Bacon.js" $ mempty
@@ -176,15 +151,6 @@ mainView = H.docTypeHtml $ do
               H.li $ H.a ! A.href "#" $ "Degreees"
               H.li $ H.a ! A.href "#" $ "Courses"
     H.div ! A.class_ "span9" $ do
-      H.div ! A.class_ "row-fluid" $ do
-        H.div ! A.id "controlpanel" $ do
-          H.h2 $ "Filters"
-          H.form ! A.id "coolform" ! A.class_ "form-inline" $ do
-            H.input ! A.type_ "text" ! A.class_ "input-small" ! A.placeholder "Firstname" ! A.name "FirstName"
-            H.input ! A.type_ "text" ! A.class_ "input-small" ! A.placeholder "Lastname" ! A.name "LastName"
-            H.input ! A.type_ "text" ! A.class_ "input-small" ! A.placeholder "Degree" ! A.name "Degree"
-            H.input ! A.type_ "text" ! A.class_ "input-small" ! A.placeholder "Major" ! A.name "Major"
-            H.button ! A.id "form_submit" ! A.class_ "btn" $ "Filter"
       H.div ! A.class_ "hero-unit" $ do
         H.table ! A.id "databox" $ mempty
   where
@@ -195,62 +161,6 @@ mainView = H.docTypeHtml $ do
 lookBSsafe :: (Monad m, Functor m, HasRqData m) => String -> m (Maybe ByteString)
 lookBSsafe key = listToMaybe <$> lookBSs key
 
-queryStudents :: [Student] -> ServerPart Response
-queryStudents students = do
-  query <- join . fmap decode <$> lookBSsafe "query"
-  ok .
-    toResponse .
-    encode .
-    StudentQueryResponse .
-    maybe students (\q -> filter (buildFilter q) students) $ query
-  where
-    sort (s:ss) students = concat $ map (sort ss) $ groupBy (groupFun s) $ sortBy (sortFun s) students
-    sortDir Asc = id
-    sortDir Desc = flip
-    sortFun (StudentSortByDate dir)   = sortDir dir (compare `on` date)
-    sortFun (StudentSortById dir)     = sortDir dir (compare `on` studentId)
-    sortFun (StudentSortByName dir)   = sortDir dir (compare `on` name)
-    sortFun (StudentSortByPoints dir) = sortDir dir (compare `on` studentPoints)
-    sortFun (StudentSortByDegree dir) = sortDir dir (compare `on` degree)
-    sortFun (StudentSortByMajor dir)  = sortDir dir (compare `on` major)
-    groupFun (StudentSortByDate _)   = (==) `on` date
-    groupFun (StudentSortById _)     = (==) `on` studentId
-    groupFun (StudentSortByName _)   = (==) `on` name
-    groupFun (StudentSortByPoints _) = (==) `on` studentPoints
-    groupFun (StudentSortByDegree _) = (==) `on` degree
-    groupFun (StudentSortByMajor _)  = (==) `on` major
-    buildFilter query student = and . catMaybes $ [
-        ((firstName' ==) <$> studentQueryFirstName query)
-      , ((lastName' ==) <$> studentQueryLastName query)
-      , ((degree student ==) <$> studentQueryDegree query)
-      , ((major student ==) <$> studentQueryMajor query)
-      , ((evalBinOp (studentPoints student)) <$> studentQueryPoints query)
-      , ((evalBinOp (date student)) <$> studentQueryDate query)
-      ]
-      where
-        (firstName', lastName') = T.breakOn " " (name student)
-
-queryThesis :: [Thesis] -> ServerPart Response
-queryThesis thesis = do
-  query <- join . fmap decode <$> lookBSsafe "query"
-  ok .
-    toResponse .
-    encode .
-    ThesisQueryResponse .
-    maybe thesis (\q -> filter (buildFilter q) thesis) $ query
-  where
-    sort (s:ss) thesis = concat $ map (sort ss) $ groupBy (groupFun s) $ sortBy (sortFun s) thesis
-    sortDir Asc = id
-    sortDir Desc = flip
-    sortFun (ThesisSortByName dir) = sortDir dir (compare `on` thesisName)
-    sortFun (ThesisSortByCourses dir) = sortDir dir (compare `on` thesisCourses)
-    groupFun (ThesisSortByCourses _) = (==) `on` thesisCourses
-    groupFun (ThesisSortByName _) = (==) `on` thesisName
-    buildFilter query thesis = and . catMaybes $ [
-        (thesisName thesis ==) <$> thesisQueryName query
-      , Just $ (S.fromList $ thesisQueryCourses query) `S.isSubsetOf` (thesisCourses thesis)
-      ]
-
 main :: IO ()
 main = do
   thesis <- parseThesis "data/kandit.txt"
@@ -258,7 +168,7 @@ main = do
   simpleHTTP nullConf{port=25565} $ do
     decodeBody (defaultBodyPolicy "/tmp" 4096 4096 4096)
     msum [
-        nullDir >> ok (toResponse mainView)
+        nullDir >> ok (toResponse $ mainView students)
       , dir "students" $ (queryStudents students)
       , dir "thesis" $ (queryThesis thesis)
       , dir "static" $ serveDirectory EnableBrowsing [] "public/"

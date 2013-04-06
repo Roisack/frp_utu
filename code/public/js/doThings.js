@@ -4,7 +4,7 @@ $(document).ready(function() {
     // $("#databox").html('<table cellpadding="0" cellspacing="0" border="0" class="display" id="outputdata"></table>');
     $("#databox").dataTable( { 
         "bJQueryUI": true,
-        "bFilter": false,
+        "aaData" : studentData,
         "aoColumns": [
             { "sTitle": "Student number" },
             { "sTitle": "Name" },
