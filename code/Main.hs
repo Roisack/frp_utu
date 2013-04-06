@@ -117,6 +117,20 @@ parseThesis path = do
       courses <- listToMaybe $ groupBy ((==) `on` fst) [T.breakOn " " course | course <- drop (n+1) contents']
       return $ zipWith (\name course -> Thesis name (S.fromList $ map snd course)) names courses
 
+userModal :: Html
+userModal = H.div ! A.class_ "modal hide fade" $ do
+  H.div ! A.class_ "modal-header" $ do
+    H.button ! A.type_ "button" ! A.class_ "close" ! data_dismiss "modal" ! aria_hidden "true" $
+      "&times;"
+    H.h3 ! A.id "user_header" $ mempty
+  H.div ! A.class_ "modal-body" ! A.id "user_body" $ do
+    mempty
+  H.div ! A.class_ "modal-footer" $ do
+    H.a ! A.href "#" ! A.class_ "btn" $ "Close"
+  where
+    data_dismiss = attribute "data-dismiss" "data-dismiss=\""
+    aria_hidden = attribute "aria-hidden" "aria-hidden=\""
+
 mainView :: Html
 mainView = H.docTypeHtml $ do
   H.head $ do
@@ -149,6 +163,7 @@ mainView = H.docTypeHtml $ do
               "Placeholder login text. What to do with this?"
             H.ul ! A.class_ "nav" $ do
               H.li $ "emptymenu"
+    userModal
     H.div ! A.class_ "container-fluid" $
       H.div ! A.class_ "row-fluid" $
         H.div ! A.class_ "span3" $
@@ -161,10 +176,11 @@ mainView = H.docTypeHtml $ do
               H.li $ H.a ! A.href "#" $ "Link"
     H.div ! A.class_ "span9" $ do
       H.div ! A.class_ "row-fluid" $ do
-        H.div ! A.id "table_mode" $ do
+        H.div ! A.id "table_mode" ! A.class_ "span4" $ do
           H.button ! A.id "mode_students" $ "Students"
           H.button ! A.id "mode_degrees" $ "Degrees"
           H.button ! A.id "mode_courses" $ "Courses"
+      H.div ! A.class_ "row-fluid" $ do
         H.div ! A.id "controlpanel" $ do
           H.h2 $ "Filters"
           H.form ! A.id "coolform" $ do
