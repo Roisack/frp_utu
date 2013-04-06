@@ -94,7 +94,7 @@ userModal :: Html
 userModal = H.div ! A.id "modal_user" ! A.class_ "modal hide fade" $ do
   H.div ! A.class_ "modal-header" $ do
     H.button ! A.type_ "button" ! A.class_ "close" ! data_dismiss "modal" ! aria_hidden "true" $
-      "&times;"
+      "x"
     H.h3 ! A.id "user_header" $ mempty
   H.div ! A.class_ "modal-body" ! A.id "user_body" $ do
     mempty
@@ -119,6 +119,7 @@ mainView students = H.docTypeHtml $ do
   H.script ! A.type_ "application/javascript" $
     H.toHtml $ "var studentData = " `T.append` (E.decodeUtf8 $ encode $ map DatatableStudent students)
   H.script ! A.type_ "application/javascript" ! A.src "/static/jquery/jquery-1.9.1.min.js" $ mempty
+  H.script ! A.type_ "application/javascript" ! A.src "/static/bootstrap/js/bootstrap.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "http://code.jquery.com/ui/1.10.2/jquery-ui.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "/static/bacon/js/Bacon.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "/static/mustache/mustache.js" $ mempty

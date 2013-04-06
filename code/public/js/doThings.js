@@ -22,5 +22,14 @@ $(document).ready(function() {
            return false;
        }).map(function(ev) {
            return dusers.fnGetData(ev.currentTarget);
-       }).onValue(function(x) { console.log(x); });
+       });
+   var userModalClose = $("#modal_user a.close").asEventStream("click").map(false);
+   var userModalOpen = dataClicks.map(true);
+   userModalClose.merge(userModalOpen).skipDuplicates().onValue(function(open) {
+       console.log(open);
+       if(open)
+           $("#modal_user").modal('show');
+       else
+           $("#modal_user").modal('hide');
+   });
 });
