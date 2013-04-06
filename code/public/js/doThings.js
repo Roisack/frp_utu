@@ -1,5 +1,6 @@
 $(document).ready(function() {
     // Initialize (users) datatables with constant data
+    var modalTemplate = $("#userModalTemplate").text();
     var dusers = $("#databox").dataTable( { 
         "bJQueryUI": true,
         "aaData" : studentData,
@@ -25,7 +26,9 @@ $(document).ready(function() {
        });
    var userQueries = dataClicks.flatMap(function(data) {
        return Bacon.fromPromise($.get("/user", {userId: data[0]}));
-   });
+   }).map(function(json) {
+       return Mustache.render(modalTemplate, json);
+   }).toProperty("");
    var userModalClose = $("#modal_user a.close").asEventStream("click").map(false);
    var userModalOpen = dataClicks.map(true);
 
@@ -37,4 +40,6 @@ $(document).ready(function() {
        else
            $("#modal_user").modal('hide');
    });
+
+   userQueries.assign($('#userBody'), 'html');
 });

@@ -104,7 +104,7 @@ userModal = H.div ! A.id "modal_user" ! A.class_ "modal hide fade" $ do
     H.button ! A.type_ "button" ! A.class_ "close" ! data_dismiss "modal" ! aria_hidden "true" $
       "x"
     H.h3 ! A.id "user_header" $ mempty
-  H.div ! A.class_ "modal-body" ! A.id "user_body" $ do
+  H.div ! A.class_ "modal-body" ! A.id "userBody" $ do
     mempty
   H.div ! A.class_ "modal-footer" $ do
     H.a ! A.href "#" ! A.class_ "btn close" $ "Close"
@@ -161,8 +161,16 @@ mainView students = H.docTypeHtml $ do
     H.script ! A.type_ "application/javascript" ! A.src "/static/mustache/mustache.js" $ mempty
     H.script ! A.type_ "application/javascript" ! A.src "http://datatables.net/download/build/jquery.dataTables.nightly.js" $ mempty
     H.script ! A.type_ "application/javascript" ! A.src "/static/js/doThings.js" $ mempty
-    H.script ! A.type_ "text/html" ! A.id "user-template" $
-      H.div mempty
+    H.script ! A.type_ "text/html" ! A.id "userModalTemplate" $
+      H.div ! A.class_ "fluid-row" $ do
+        H.div ! A.class_ "span4" $ do
+          H.h2 $ "{{name}}"
+          H.hr
+          H.p $ "{{degree}}"
+          H.p $ "{{major}}"
+          H.p $ "{{date}}"
+          H.p $ "{{studentId}}"
+          H.p $ "{{studentPoints}}"
   H.body $ do
     H.div ! A.class_ "navbar navbar-inverse navbar-fixed-top" $ do
       H.div ! A.class_ "navbar-inner" $ do
