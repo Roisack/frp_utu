@@ -91,7 +91,7 @@ parseThesis path = do
       return $ zipWith (\name course -> Thesis name (S.fromList $ map snd course)) names courses
 
 userModal :: Html
-userModal = H.div ! A.class_ "modal hide fade" $ do
+userModal = H.div ! A.id "modal_user" ! A.class_ "modal hide fade" $ do
   H.div ! A.class_ "modal-header" $ do
     H.button ! A.type_ "button" ! A.class_ "close" ! data_dismiss "modal" ! aria_hidden "true" $
       "&times;"
@@ -99,7 +99,7 @@ userModal = H.div ! A.class_ "modal hide fade" $ do
   H.div ! A.class_ "modal-body" ! A.id "user_body" $ do
     mempty
   H.div ! A.class_ "modal-footer" $ do
-    H.a ! A.href "#" ! A.class_ "btn" $ "Close"
+    H.a ! A.href "#" ! A.class_ "btn close" $ "Close"
   where
     data_dismiss = attribute "data-dismiss" "data-dismiss=\""
     aria_hidden = attribute "aria-hidden" "aria-hidden=\""
@@ -169,8 +169,6 @@ main = do
     decodeBody (defaultBodyPolicy "/tmp" 4096 4096 4096)
     msum [
         nullDir >> ok (toResponse $ mainView students)
-      , dir "students" $ (queryStudents students)
-      , dir "thesis" $ (queryThesis thesis)
       , dir "static" $ serveDirectory EnableBrowsing [] "public/"
       ]
 
