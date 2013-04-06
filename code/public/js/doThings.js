@@ -23,8 +23,13 @@ $(document).ready(function() {
        }).map(function(ev) {
            return dusers.fnGetData(ev.currentTarget);
        });
+   var userQueries = dataClicks.flatMap(function(data) {
+       return Bacon.fromPromise($.get("/user", {userId: data[0]}));
+   });
    var userModalClose = $("#modal_user a.close").asEventStream("click").map(false);
    var userModalOpen = dataClicks.map(true);
+
+
    userModalClose.merge(userModalOpen).skipDuplicates().onValue(function(open) {
        console.log(open);
        if(open)
