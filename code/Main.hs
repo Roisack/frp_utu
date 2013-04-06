@@ -23,6 +23,7 @@ import Data.Aeson.TH
 import Data.Time
 import qualified Data.Set as S
 import Data.Set (Set)
+import Data.ByteString.Lazy (ByteString)
 
 type Course        = Text
 type Name          = Text
@@ -197,6 +198,9 @@ mainView = H.docTypeHtml $ do
     data_target = attribute "data-target" "data-target=\""
     title = "Käyttöliittymät harkka"
 
+lookBSsafe :: (Monad m, Functor m, HasRqData m) => String -> m (Maybe ByteString)
+lookBSsafe key = listToMaybe <$> lookBSs key
+
 queryStudents :: [Student] -> ServerPart Response
 queryStudents students = do
   query <- join . fmap decode . listToMaybe <$> lookBSs "query"
@@ -233,13 +237,12 @@ queryStudents students = do
 
 queryThesis :: [Thesis] -> ServerPart Response
 queryThesis thesis = do
-  query <- decode <$> lookBS "query"
-  sorting <- (maybe [] id) . decode <$> lookBS "sort"
+  query <- join . fmap decode <$> lookBSsafe "query"
+  -- sorting <- (maybe [] id) . decode <$> lookBS "sort"
   ok .
     toResponse .
     encode .
     ThesisQueryResponse .
-    sort sorting .
     maybe thesis (\q -> filter (buildFilter q) thesis) $ query
   where
     sort (s:ss) thesis = concat $ map (sort ss) $ groupBy (groupFun s) $ sortBy (sortFun s) thesis
