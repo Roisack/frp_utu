@@ -1,6 +1,6 @@
 $(document).ready(function() {
-
-    $("#databox").dataTable( { 
+    // Initialize (users) datatables with constant data
+    var dusers = $("#databox").dataTable( { 
         "bJQueryUI": true,
         "aaData" : studentData,
         "aoColumns": [
@@ -12,4 +12,15 @@ $(document).ready(function() {
             { "sTitle": "Enrollment date"}
         ]
    });
+
+   var dataClicks = $("#databox").
+       asEventStream("click", "tr").
+       filter(function(ev) {
+           var trg = $(ev.currentTarget);
+           if(trg.attr("class") == "odd" || trg.attr("class") == "even")
+               return true;
+           return false;
+       }).map(function(ev) {
+           return dusers.fnGetData(ev.currentTarget);
+       }).onValue(function(x) { console.log(x); });
 });
