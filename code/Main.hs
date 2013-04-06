@@ -12,7 +12,7 @@ import qualified System.IO as IO
 import Control.Applicative
 import Control.Monad
 import Data.Maybe (maybe, catMaybes, listToMaybe)
-import Data.List (groupBy, sortBy, group)
+import Data.List (groupBy, sortBy, group, find)
 import Data.Function (on)
 import qualified Text.Blaze.Html5 as H
 import Text.Blaze.Html5 (Html, (!))
@@ -50,6 +50,9 @@ data Student       = Student {
   } deriving Show
 newtype DatatableStudent = DatatableStudent Student
 
+$(deriveJSON id ''Season)
+$(deriveJSON id ''Date)
+$(deriveJSON id ''Student)
 instance ToJSON DatatableStudent where
   toJSON (DatatableStudent student) = toJSON [
         studentId student
@@ -109,6 +112,34 @@ userModal = H.div ! A.id "modal_user" ! A.class_ "modal hide fade" $ do
     data_dismiss = attribute "data-dismiss" "data-dismiss=\""
     aria_hidden = attribute "aria-hidden" "aria-hidden=\""
 
+userQuery :: [Student] -> [Thesis] -> ServerPart Response
+userQuery students thesis = do
+  id' <- lookText "userId"
+  let user = find (\s -> studentId s == id') students
+  case user of
+       Just user' -> ok $ toResponse $ toJSON user'
+       Nothing -> notFound $ toResponse $ notFoundView $
+         H.p "User is not found"
+
+notFoundView :: Html -> Html
+notFoundView inner = H.docTypeHtml $ do
+  H.head $ do
+    H.title "Not found"
+    H.meta ! A.charset "utf-8"
+    H.meta ! A.name "viewport"    ! A.content "width=device-width, initial-scale=1.0"
+    H.meta ! A.name "description" ! A.content ""
+    H.meta ! A.name "author"      ! A.content ""
+    H.link ! A.href "/static/bootstrap/css/bootstrap.css"            ! A.rel "stylesheet"
+    H.link ! A.href "/static/css/style.css"                          ! A.rel "stylesheet"
+    H.link ! A.href "/static/bootstrap/css/bootstrap-responsive.css" ! A.rel "stylesheet"
+    H.link ! A.href "http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" ! A.rel "stylesheet"
+    H.script ! A.type_ "text/html" ! A.id "user-template" $
+        H.div mempty
+  H.body $ do
+    H.h1 "404 Not found"
+    H.div ! A.class_ "span9 well" $
+      inner
+
 mainView :: [Student] -> Html
 mainView students = H.docTypeHtml $ do
   H.head $ do
@@ -121,16 +152,16 @@ mainView students = H.docTypeHtml $ do
     H.link ! A.href "/static/css/style.css"                          ! A.rel "stylesheet"
     H.link ! A.href "/static/bootstrap/css/bootstrap-responsive.css" ! A.rel "stylesheet"
     H.link ! A.href "http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" ! A.rel "stylesheet"
-  H.script ! A.type_ "application/javascript" $
-    H.toHtml $ "var studentData = " `T.append` (E.decodeUtf8 $ encode $ map DatatableStudent students)
-  H.script ! A.type_ "application/javascript" ! A.src "/static/jquery/jquery-1.9.1.min.js" $ mempty
-  H.script ! A.type_ "application/javascript" ! A.src "/static/bootstrap/js/bootstrap.js" $ mempty
-  H.script ! A.type_ "application/javascript" ! A.src "http://code.jquery.com/ui/1.10.2/jquery-ui.js" $ mempty
-  H.script ! A.type_ "application/javascript" ! A.src "/static/bacon/js/Bacon.js" $ mempty
-  H.script ! A.type_ "application/javascript" ! A.src "/static/mustache/mustache.js" $ mempty
-  H.script ! A.type_ "application/javascript" ! A.src "http://datatables.net/download/build/jquery.dataTables.nightly.js" $ mempty
-  H.script ! A.type_ "application/javascript" ! A.src "/static/js/doThings.js" $ mempty
-  H.script ! A.type_ "text/html" ! A.id "user-template" $
+    H.script ! A.type_ "application/javascript" $
+      H.toHtml $ "var studentData = " `T.append` (E.decodeUtf8 $ encode $ map DatatableStudent students)
+    H.script ! A.type_ "application/javascript" ! A.src "/static/jquery/jquery-1.9.1.min.js" $ mempty
+    H.script ! A.type_ "application/javascript" ! A.src "/static/bootstrap/js/bootstrap.js" $ mempty
+    H.script ! A.type_ "application/javascript" ! A.src "http://code.jquery.com/ui/1.10.2/jquery-ui.js" $ mempty
+    H.script ! A.type_ "application/javascript" ! A.src "/static/bacon/js/Bacon.js" $ mempty
+    H.script ! A.type_ "application/javascript" ! A.src "/static/mustache/mustache.js" $ mempty
+    H.script ! A.type_ "application/javascript" ! A.src "http://datatables.net/download/build/jquery.dataTables.nightly.js" $ mempty
+    H.script ! A.type_ "application/javascript" ! A.src "/static/js/doThings.js" $ mempty
+    H.script ! A.type_ "text/html" ! A.id "user-template" $
       H.div mempty
   H.body $ do
     H.div ! A.class_ "navbar navbar-inverse navbar-fixed-top" $ do
@@ -167,6 +198,9 @@ mainView students = H.docTypeHtml $ do
 lookBSsafe :: (Monad m, Functor m, HasRqData m) => String -> m (Maybe ByteString)
 lookBSsafe key = listToMaybe <$> lookBSs key
 
+looksafe :: (Monad m, Functor m, HasRqData m) => String -> m (Maybe String)
+looksafe key = listToMaybe <$> looks key
+
 main :: IO ()
 main = do
   thesis <- parseThesis "data/kandit.txt"
@@ -175,6 +209,7 @@ main = do
     decodeBody (defaultBodyPolicy "/tmp" 4096 4096 4096)
     msum [
         nullDir >> ok (toResponse $ mainView students)
+      , dir "user" $ (userQuery students thesis)
       , dir "static" $ serveDirectory EnableBrowsing [] "public/"
       ]
 
