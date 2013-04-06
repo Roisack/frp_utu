@@ -142,7 +142,9 @@ mainView = H.docTypeHtml $ do
     H.link ! A.href "/static/bootstrap/css/bootstrap.css"            ! A.rel "stylesheet"
     H.link ! A.href "/static/css/style.css"                          ! A.rel "stylesheet"
     H.link ! A.href "/static/bootstrap/css/bootstrap-responsive.css" ! A.rel "stylesheet"
+    H.link ! A.href "http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" ! A.rel "stylesheet"
   H.script ! A.type_ "application/javascript" ! A.src "/static/jquery/jquery-1.9.1.min.js" $ mempty
+  H.script ! A.type_ "application/javascript" ! A.src "http://code.jquery.com/ui/1.10.2/jquery-ui.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "/static/bacon/js/Bacon.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "/static/mustache/mustache.js" $ mempty
   H.script ! A.type_ "application/javascript" ! A.src "http://datatables.net/download/build/jquery.dataTables.nightly.js" $ mempty
@@ -170,16 +172,10 @@ mainView = H.docTypeHtml $ do
           H.div ! A.class_ "well sidebar-nav" $
             H.ul ! A.class_ "nav nav-list" $ do
               H.li ! A.class_ "nav-header" $ "Sidebar"
-              H.li $ H.a ! A.href "#" $ "Link"
-              H.li $ H.a ! A.href "#" $ "Link"
-              H.li $ H.a ! A.href "#" $ "Link"
-              H.li $ H.a ! A.href "#" $ "Link"
+              H.li $ H.a ! A.href "#" $ "Students"
+              H.li $ H.a ! A.href "#" $ "Degreees"
+              H.li $ H.a ! A.href "#" $ "Courses"
     H.div ! A.class_ "span9" $ do
-      H.div ! A.class_ "row-fluid" $ do
-        H.div ! A.id "table_mode" ! A.class_ "span4" $ do
-          H.button ! A.id "mode_students" $ "Students"
-          H.button ! A.id "mode_degrees" $ "Degrees"
-          H.button ! A.id "mode_courses" $ "Courses"
       H.div ! A.class_ "row-fluid" $ do
         H.div ! A.id "controlpanel" $ do
           H.h2 $ "Filters"
@@ -189,14 +185,8 @@ mainView = H.docTypeHtml $ do
             H.input ! A.type_ "text" ! A.class_ "input-small" ! A.placeholder "Degree" ! A.name "Degree"
             H.input ! A.type_ "text" ! A.class_ "input-small" ! A.placeholder "Major" ! A.name "Major"
             H.button ! A.id "form_submit" ! A.class_ "btn" $ "Filter"
-      H.div ! A.class_ "hero-unit" ! A.id "databox" $ do
-        H.p $ "stuff here"
-      H.div ! A.class_ "row-fluid" $
-        H.div ! A.class_ "span4" $ do
-          H.p "Smaller element"
-      H.div ! A.class_ "row-fluid" $
-        H.div ! A.class_ "span4" $ do
-          H.p "Smaller element"
+      H.div ! A.class_ "hero-unit" $ do
+        H.table ! A.id "databox" $ mempty
   where
     data_toggle = attribute "data-toggle" "data-toggle=\""
     data_target = attribute "data-target" "data-target=\""

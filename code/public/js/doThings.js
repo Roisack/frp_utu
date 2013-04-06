@@ -1,15 +1,17 @@
 $(document).ready(function() {
 
     $("#navigation").hide();
-    $("#databox").html('<table cellpadding="0" cellspacing="0" border="0" class="display" id="outputdata"></table>');
-    $("#outputdata").dataTable( { 
+    // $("#databox").html('<table cellpadding="0" cellspacing="0" border="0" class="display" id="outputdata"></table>');
+    $("#databox").dataTable( { 
+        "bJQueryUI": true,
+        "bFilter": false,
         "aoColumns": [
-        { "sTitle": "studentnumber" },
-        { "sTitle": "name" },
-        { "sTitle": "degree" },
-        { "sTitle": "major" },
-        { "sTitle": "points"},
-        { "sTitle": "date"}
+            { "sTitle": "Student number" },
+            { "sTitle": "Name" },
+            { "sTitle": "Degree" },
+            { "sTitle": "Major" },
+            { "sTitle": "Student points"},
+            { "sTitle": "Enrollment date"}
         ]
    });
     // Inserts the <th> tags required for listing students in the main databox
