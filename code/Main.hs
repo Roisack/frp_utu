@@ -25,6 +25,7 @@ import Data.Time
 import qualified Data.Set as S
 import Data.Set (Set)
 import Data.ByteString.Lazy (ByteString)
+import qualified Data.ByteString.Char8 as B
 
 type Course        = Text
 type Name          = Text
@@ -58,6 +59,10 @@ instance ToJSON DatatableStudent where
       , T.pack $ show $ studentPoints student
       , T.pack $ drop 5 $ show $ date student
     ]
+
+instance ToMessage Value where
+  toMessage x = encode x
+  toContentType _ = B.pack ("application/json" :: String)
 
 parseStudents :: FilePath -> IO [Student]
 parseStudents path = do
