@@ -203,11 +203,12 @@ lookBSsafe key = listToMaybe <$> lookBSs key
 
 queryStudents :: [Student] -> ServerPart Response
 queryStudents students = do
-  query <- join . fmap decode . listToMaybe <$> lookBSs "query"
-  -- sorting <- fmap ((maybe [] id) . decode) . listToMaybe <$> lookBSs "sort"
-  case query of
-       Nothing -> ok $ toResponse $ encode $ StudentQueryResponse $ students
-       Just query' -> ok $ toResponse $ encode $ StudentQueryResponse $ filter (buildFilter query') students
+  query <- join . fmap decode <$> lookBSsafe "query"
+  ok .
+    toResponse .
+    encode .
+    StudentQueryResponse .
+    maybe students (\q -> filter (buildFilter q) students) $ query
   where
     sort (s:ss) students = concat $ map (sort ss) $ groupBy (groupFun s) $ sortBy (sortFun s) students
     sortDir Asc = id
