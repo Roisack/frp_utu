@@ -239,7 +239,6 @@ queryStudents students = do
 queryThesis :: [Thesis] -> ServerPart Response
 queryThesis thesis = do
   query <- join . fmap decode <$> lookBSsafe "query"
-  -- sorting <- (maybe [] id) . decode <$> lookBS "sort"
   ok .
     toResponse .
     encode .
