@@ -13,6 +13,12 @@ $(document).ready(function() {
             { "sTitle": "Enrollment date"}
         ]
    });
+   window.touchStudents = function() {
+       $.get("/student/data", function(data) {
+           dusers.fnClearTable();
+           dusers.fnAddData(data);
+       });
+   };
 
    var dataClicks = $("#databox").
        asEventStream("click", "tr").

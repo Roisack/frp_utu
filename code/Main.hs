@@ -130,12 +130,24 @@ userQuery = do
        Nothing -> notFound $ toResponse $ notFoundView $
          H.p "User is not found"
 
+fileResponse ::  Html -> Html
+fileResponse fun = H.docTypeHtml $ do
+  H.head $
+    H.script ! A.type_ "application/javascript" $
+      ("parent." `mappend` fun `mappend` "()")
+  H.body $ mempty
+
+studentsData :: Mining Response
+studentsData = do
+  s <- gets students
+  ok $ toResponse $ toJSON $ map DatatableStudent s
+
 studentsUpload :: Mining Response
 studentsUpload = do
   (path, _, _) <- lookFile "studentFile"
   newStudents <- liftIO $ parseStudents path
   modify (\m -> m{students=newStudents})
-  undefined
+  ok $ toResponse $ fileResponse "touchStudents"
 
 thesisUpload :: Mining Response
 thesisUpload = do
@@ -256,6 +268,7 @@ main = do
         nullDir >> ok (toResponse $ mainView students)
       , dir "user" $ userQuery
       , dirs "student/upload" $ studentsUpload
+      , dirs "student/data" $ studentsData
       , dirs "thesis/upload" $ thesisUpload
       , dir "static" $ serveDirectory EnableBrowsing [] "public/"
       ]) state
