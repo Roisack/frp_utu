@@ -15,7 +15,7 @@ import Data.Maybe (maybe, catMaybes, listToMaybe)
 import Data.List (groupBy, sortBy, group, find)
 import Data.Function (on)
 import qualified Text.Blaze.Html5 as H
-import Text.Blaze.Html5 (Html, (!))
+import Text.Blaze.Html5 (AttributeValue, Html, (!))
 import Text.Blaze.Internal (attribute)
 import qualified Text.Blaze.Html5.Attributes as A
 import Data.Monoid
@@ -163,6 +163,17 @@ notFoundView inner = H.docTypeHtml $ do
     H.div ! A.class_ "span9 well" $
       inner
 
+uploadForm :: AttributeValue -> Text -> AttributeValue -> Html
+uploadForm name title action = let
+  iframeName = ("iframe" `mappend` name)
+  in H.div ! A.class_ "fluid-row" $
+      H.div ! A.class_ "span4" $ do
+        H.h3 $ H.toHtml title
+        H.iframe ! A.name iframeName ! A.style "display: none" $ mempty
+        H.form ! A.action action ! A.target iframeName ! A.class_ "form-inline" ! A.enctype "multipart/form-data" ! A.method "post" $ do
+          H.input ! A.type_ "file" ! A.name name
+          H.input ! A.type_ "submit" ! A.class_ "btn" ! A.value "Update"
+
 mainView :: [Student] -> Html
 mainView students = H.docTypeHtml $ do
   H.head $ do
@@ -209,7 +220,7 @@ mainView students = H.docTypeHtml $ do
             H.ul ! A.class_ "nav" $ do
               H.li $ "emptymenu"
     userModal
-    H.div ! A.class_ "container-fluid" $
+    H.div ! A.class_ "container-fluid" $ do
       H.div ! A.class_ "row-fluid" $
         H.div ! A.class_ "span3" $
           H.div ! A.class_ "well sidebar-nav" $
@@ -218,6 +229,8 @@ mainView students = H.docTypeHtml $ do
               H.li $ H.a ! A.href "#" $ "Students"
               H.li $ H.a ! A.href "#" $ "Degreees"
               H.li $ H.a ! A.href "#" $ "Courses"
+      uploadForm "studentFile" "Update students file" "student/upload"
+      uploadForm "thesisFile" "Update thesis file" "thesis/upload"
     H.div ! A.class_ "span9" $ do
       H.div ! A.class_ "hero-unit" $ do
         H.table ! A.id "databox" $ mempty
@@ -243,7 +256,7 @@ main = do
         nullDir >> ok (toResponse $ mainView students)
       , dir "user" $ userQuery
       , dirs "student/upload" $ studentsUpload
-      , dirs "thesis/upload" $ studentsUpload
+      , dirs "thesis/upload" $ thesisUpload
       , dir "static" $ serveDirectory EnableBrowsing [] "public/"
       ]) state
 
