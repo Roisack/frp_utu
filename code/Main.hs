@@ -130,12 +130,12 @@ parseThesis path = do
       return $ zipWith (\name course -> Thesis name (S.fromList $ map snd course)) names courses
 
 studentModal :: Html
-studentModal = H.div ! A.id "modal_student" ! A.class_ "modal hide fade" $ do
+studentModal = H.div ! A.id "modal" ! A.class_ "modal hide fade" $ do
   H.div ! A.class_ "modal-header" $ do
     H.button ! A.type_ "button" ! A.class_ "close" ! data_dismiss "modal" ! aria_hidden "true" $
       "x"
     H.h3 ! A.id "student_header" $ mempty
-  H.div ! A.class_ "modal-body" ! A.id "studentBody" $ do
+  H.div ! A.class_ "modal-body" ! A.id "modalBody" $ do
     mempty
   H.div ! A.class_ "modal-footer" $ do
     H.a ! A.href "#" ! A.class_ "btn close" $ "Close"
@@ -277,8 +277,12 @@ mainView students = H.docTypeHtml $ do
             uploadForm "thesisFile" "Update thesis file" "thesis/upload"
             uploadForm "creditsFile" "Update credits file" "credits/upload"
     H.div ! A.class_ "span9" $ do
-      H.div ! A.class_ "hero-unit" $ do
-        H.table ! A.id "databox" $ mempty
+      H.div ! A.id "userData" ! A.class_ "hero-unit" $ do
+        H.table ! A.class_ "databox" $ mempty
+      H.div ! A.id "degreeData" ! A.style "display: none" ! A.class_ "hero-unit" $ do
+        H.table ! A.class_ "databox" $ mempty
+      H.div ! A.id "creditData" ! A.style "display: none" ! A.class_ "hero-unit" $ do
+        H.table ! A.class_ "databox" $ mempty
   where
     data_toggle = attribute "data-toggle" " data-toggle=\""
     data_target = attribute "data-target" " data-target=\""

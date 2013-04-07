@@ -4,53 +4,65 @@ $(document).ready(function() {
         return $(ev.currentTarget).attr('data-target');
     }).toProperty('students').skipDuplicates();
 
-    // Initialize (students) datatables with constant data
-    var modalTemplate = $("#studentModalTemplate").text();
-    var dstudents = $("#databox").dataTable( {
-        "bJQueryUI": true,
-        "aaData" : studentData,
-        "aoColumns": [
+    var initPage = function(settings) {
+        var modalTemplate = settings.template
+        var dtable = settings.dtElem.dataTable( {
+            "bJQueryUI": true,
+            "aoColumns": settings.dtColumns
+        });
+
+        var touch = function() {
+            $.get(settings.dataUri, function(data) {
+                dtable.fnClearTable();
+                dtable.fnAddData(data);
+            });
+        };
+
+        var dataClickStream = settings.dtElem.
+            asEventStream("click", "tr").
+            filter(function(ev) {
+            var trg = $(ev.currentTarget);
+            if(trg.attr("class") == "odd" || trg.attr("class") == "even")
+                return true;
+            return false;
+        }).map(function(ev) {
+            return dtable.fnGetData(ev.currentTarget);
+        });
+        var templateProperty = dataClickStream.flatMap(function(data) {
+            return Bacon.fromPromise(settings.moreInfo(data));
+        }).map(function(json) {
+            return Mustache.render(modalTemplate, json);
+        }).toProperty("");
+        var modalClose = $("#modal a.close").asEventStream("click").map(false);
+        var modalOpen = dataClickStream.map(true);
+
+
+        modalClose.merge(modalOpen).skipDuplicates().onValue(function(open) {
+            if(open)
+                $("#modal").modal('show');
+            else
+                $("#modal").modal('hide');
+        });
+
+        templateProperty.assign($('#modalBody'), 'html');
+        touch();
+
+        return touch;
+    }
+
+    window.touchStudents = initPage({
+        template: $("#studentModalTemplate").text(),
+        dtElem: $("#userData .databox"),
+        dtColumns: [
             { "sTitle": "Student number" },
             { "sTitle": "Name" },
             { "sTitle": "Degree" },
             { "sTitle": "Major" },
             { "sTitle": "Student points"},
             { "sTitle": "Enrollment date"}
-        ]
-   });
-   window.touchStudents = function() {
-       $.get("/student/data", function(data) {
-           dstudents.fnClearTable();
-           dstudents.fnAddData(data);
-       });
-   };
+        ],
+        moreInfo: function(data) { return $.get("/student", {studentId: data[0]}); },
+        dataUri: "/student/data"
+    });
 
-   var dataClicks = $("#databox").
-       asEventStream("click", "tr").
-       filter(function(ev) {
-           var trg = $(ev.currentTarget);
-           if(trg.attr("class") == "odd" || trg.attr("class") == "even")
-               return true;
-           return false;
-       }).map(function(ev) {
-           return dstudents.fnGetData(ev.currentTarget);
-       });
-   var studentQueries = dataClicks.flatMap(function(data) {
-       return Bacon.fromPromise($.get("/student", {studentId: data[0]}));
-   }).map(function(json) {
-       return Mustache.render(modalTemplate, json);
-   }).toProperty("");
-   var studentModalClose = $("#modal_student a.close").asEventStream("click").map(false);
-   var studentModalOpen = dataClicks.map(true);
-
-
-   studentModalClose.merge(studentModalOpen).skipDuplicates().onValue(function(open) {
-       console.log(open);
-       if(open)
-           $("#modal_student").modal('show');
-       else
-           $("#modal_student").modal('hide');
-   });
-
-   studentQueries.assign($('#studentBody'), 'html');
 });
