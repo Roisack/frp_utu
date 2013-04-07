@@ -37,16 +37,20 @@ data MinedData = MinedData {
   }
 type Mining a = StateT MinedData (ServerPartT IO) a
 
-type Course        = Text
+type CourseCode    = Text
 type Name          = Text
 type StudentPoints = Int
 type StudentID     = Text
 type Major         = Text
 type Degree        = Text
 type Year          = Int
+data Course = Course {
+    courseCode :: CourseCode
+  , courseCredits :: Int
+  }
 data Thesis        = Thesis {
     thesisName :: Name
-  , thesisCourses :: Set Course
+  , thesisCourses :: Set CourseCode
   } deriving (Show, Eq, Ord)
 data Date          = Date Year Season deriving (Show, Eq, Ord)
 data Season        = Autumn | Spring deriving (Show, Eq, Ord)
@@ -57,6 +61,13 @@ data Student       = Student {
   , studentPoints :: StudentPoints
   , degree ::  Degree
   , major :: Major
+  } deriving Show
+data Credit = Credit {
+    creditStudentId :: StudentID
+  , creditId :: Text
+  , creditName :: Text
+  , creditDate :: Text
+  , creditCredits :: Int
   } deriving Show
 newtype DatatableStudent = DatatableStudent Student
 
@@ -76,6 +87,15 @@ instance ToJSON DatatableStudent where
 instance ToMessage Value where
   toMessage x = encode x
   toContentType _ = B.pack ("application/json" :: String)
+
+parseCredits :: FilePath -> IO [Credit]
+parseCredits path =
+  catMaybes . map parseCredit . map (T.splitOn ";") .  T.splitOn "\r\n" <$> TI.readFile path
+  where
+    parseCredit (sid : cid : name : date : credits : _ ) = do
+      credits' <- readMay $ T.unpack credits
+      return $ Credit sid cid name date credits'
+    parseCredit _ = Nothing
 
 parseStudents :: FilePath -> IO (Map StudentID Student)
 parseStudents path =
@@ -260,10 +280,15 @@ lookBSsafe key = listToMaybe <$> lookBSs key
 looksafe :: (Monad m, Functor m, HasRqData m) => String -> m (Maybe String)
 looksafe key = listToMaybe <$> looks key
 
+studentsCredits ::  Student -> [Credit] -> [Credit]
+studentsCredits student credits =
+  filter (\c -> studentId student == creditStudentId c) credits
+
 main :: IO ()
 main = do
   thesis <- parseThesis "data/kandit.txt"
   students <- parseStudents "data/opiskelijat.txt"
+  credits <- parseCredits "data/suoritukset.txt"
   let state = MinedData students thesis
   simpleHTTP nullConf{port=25565} $ do
     decodeBody (defaultBodyPolicy "/tmp" 16384 16384 16384)
