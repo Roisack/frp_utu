@@ -280,8 +280,8 @@ mainView students = H.docTypeHtml $ do
       H.div ! A.class_ "hero-unit" $ do
         H.table ! A.id "databox" $ mempty
   where
-    data_toggle = attribute "data-toggle" "data-toggle=\""
-    data_target = attribute "data-target" "data-target=\""
+    data_toggle = attribute "data-toggle" " data-toggle=\""
+    data_target = attribute "data-target" " data-target=\""
     title = "Käyttöliittymät harkka"
 
 lookBSsafe :: (Monad m, Functor m, HasRqData m) => String -> m (Maybe ByteString)
