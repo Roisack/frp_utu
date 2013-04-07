@@ -33,7 +33,7 @@ import Control.Monad.State
 data MinedData = MinedData {
     students :: Map StudentID Student
   , thesis :: [Thesis]
-  -- , courses :: [Course]
+  , credits :: [Credit]
   }
 type Mining a = StateT MinedData (ServerPartT IO) a
 
@@ -177,7 +177,14 @@ thesisUpload = do
   (path, _, _) <- lookFile "thesisFile"
   newThesis <- liftIO $ parseThesis path
   modify (\m -> m{thesis=newThesis})
-  undefined
+  ok $ toResponse $ fileResponse "touchThesis"
+
+creditsUpload :: Mining Response
+creditsUpload = do
+  (path, _, _) <- lookFile "creditsFile"
+  newCredits <- liftIO $ parseCredits path
+  modify (\m -> m{credits=newCredits})
+  ok $ toResponse $ fileResponse "touchCredits"
 
 notFoundView :: Html -> Html
 notFoundView inner = H.docTypeHtml $ do
@@ -201,8 +208,8 @@ notFoundView inner = H.docTypeHtml $ do
 uploadForm :: AttributeValue -> Text -> AttributeValue -> Html
 uploadForm name title action = let
   iframeName = ("iframe" `mappend` name)
-  in H.div ! A.class_ "fluid-row" $
-      H.div ! A.class_ "span4" $ do
+  in H.div ! A.class_ "fluid-row" ! A.style "display: none" $
+      H.div ! A.class_ "span3" $ do
         H.h3 $ H.toHtml title
         H.iframe ! A.name iframeName ! A.style "display: none" $ mempty
         H.form ! A.action action ! A.target iframeName ! A.class_ "form-inline" ! A.enctype "multipart/form-data" ! A.method "post" $ do
@@ -256,16 +263,19 @@ mainView students = H.docTypeHtml $ do
               H.li $ "emptymenu"
     userModal
     H.div ! A.class_ "container-fluid" $ do
-      H.div ! A.class_ "row-fluid" $
-        H.div ! A.class_ "span3" $
-          H.div ! A.class_ "well sidebar-nav" $
-            H.ul ! A.class_ "nav nav-list" $ do
-              H.li ! A.class_ "nav-header" $ "Sidebar"
-              H.li $ H.a ! A.href "#" $ "Students"
-              H.li $ H.a ! A.href "#" $ "Degreees"
-              H.li $ H.a ! A.href "#" $ "Courses"
-      uploadForm "studentFile" "Update students file" "student/upload"
-      uploadForm "thesisFile" "Update thesis file" "thesis/upload"
+      H.div ! A.class_ "row-fluid" $ do
+        H.div ! A.class_ "span8" $ do
+          H.div ! A.class_ "span3" $
+            H.div ! A.class_ "well sidebar-nav" $
+              H.ul ! A.class_ "nav nav-list" $ do
+                H.li ! A.class_ "nav-header" $ "Sidebar"
+                H.li $ H.a ! A.href "#" $ "Students"
+                H.li $ H.a ! A.href "#" $ "Degreees"
+                H.li $ H.a ! A.href "#" $ "Courses"
+          H.div ! A.class_ "span4" $ do
+            uploadForm "studentFile" "Update students file" "student/upload"
+            uploadForm "thesisFile" "Update thesis file" "thesis/upload"
+            uploadForm "creditsFile" "Update credits file" "credits/upload"
     H.div ! A.class_ "span9" $ do
       H.div ! A.class_ "hero-unit" $ do
         H.table ! A.id "databox" $ mempty
@@ -289,7 +299,7 @@ main = do
   thesis <- parseThesis "data/kandit.txt"
   students <- parseStudents "data/opiskelijat.txt"
   credits <- parseCredits "data/suoritukset.txt"
-  let state = MinedData students thesis
+  let state = MinedData students thesis credits
   simpleHTTP nullConf{port=25565} $ do
     decodeBody (defaultBodyPolicy "/tmp" 16384 16384 16384)
     evalStateT (msum [
