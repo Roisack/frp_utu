@@ -130,6 +130,20 @@ userQuery = do
        Nothing -> notFound $ toResponse $ notFoundView $
          H.p "User is not found"
 
+studentsUpload :: Mining Response
+studentsUpload = do
+  (path, _, _) <- lookFile "studentFile"
+  newStudents <- liftIO $ parseStudents path
+  modify (\m -> m{students=newStudents})
+  undefined
+
+thesisUpload :: Mining Response
+thesisUpload = do
+  (path, _, _) <- lookFile "thesisFile"
+  newThesis <- liftIO $ parseThesis path
+  modify (\m -> m{thesis=newThesis})
+  undefined
+
 notFoundView :: Html -> Html
 notFoundView inner = H.docTypeHtml $ do
   H.head $ do
@@ -224,10 +238,12 @@ main = do
   students <- parseStudents "data/opiskelijat.txt"
   let state = MinedData students thesis
   simpleHTTP nullConf{port=25565} $ do
-    decodeBody (defaultBodyPolicy "/tmp" 4096 4096 4096)
+    decodeBody (defaultBodyPolicy "/tmp" 16384 16384 16384)
     evalStateT (msum [
         nullDir >> ok (toResponse $ mainView students)
       , dir "user" $ userQuery
+      , dirs "student/upload" $ studentsUpload
+      , dirs "thesis/upload" $ studentsUpload
       , dir "static" $ serveDirectory EnableBrowsing [] "public/"
       ]) state
 
