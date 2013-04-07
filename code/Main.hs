@@ -129,13 +129,13 @@ parseThesis path = do
       courses <- listToMaybe $ groupBy ((==) `on` fst) [T.breakOn " " course | course <- drop (n+1) contents']
       return $ zipWith (\name course -> Thesis name (S.fromList $ map snd course)) names courses
 
-userModal :: Html
-userModal = H.div ! A.id "modal_user" ! A.class_ "modal hide fade" $ do
+studentModal :: Html
+studentModal = H.div ! A.id "modal_student" ! A.class_ "modal hide fade" $ do
   H.div ! A.class_ "modal-header" $ do
     H.button ! A.type_ "button" ! A.class_ "close" ! data_dismiss "modal" ! aria_hidden "true" $
       "x"
-    H.h3 ! A.id "user_header" $ mempty
-  H.div ! A.class_ "modal-body" ! A.id "userBody" $ do
+    H.h3 ! A.id "student_header" $ mempty
+  H.div ! A.class_ "modal-body" ! A.id "studentBody" $ do
     mempty
   H.div ! A.class_ "modal-footer" $ do
     H.a ! A.href "#" ! A.class_ "btn close" $ "Close"
@@ -143,13 +143,13 @@ userModal = H.div ! A.id "modal_user" ! A.class_ "modal hide fade" $ do
     data_dismiss = attribute "data-dismiss" "data-dismiss=\""
     aria_hidden = attribute "aria-hidden" "aria-hidden=\""
 
-userQuery :: Mining Response
-userQuery = do
+studentQuery :: Mining Response
+studentQuery = do
   students <- gets students
-  id' <- lookText "userId"
-  let user = M.lookup id' students
-  case user of
-       Just user' -> ok $ toResponse $ toJSON user'
+  id' <- lookText "studentId"
+  let student = M.lookup id' students
+  case student of
+       Just student' -> ok $ toResponse $ toJSON student'
        Nothing -> notFound $ toResponse $ notFoundView $
          H.p "User is not found"
 
@@ -198,7 +198,7 @@ notFoundView inner = H.docTypeHtml $ do
     H.link ! A.href "/static/css/style.css"                          ! A.rel "stylesheet"
     H.link ! A.href "/static/bootstrap/css/bootstrap-responsive.css" ! A.rel "stylesheet"
     H.link ! A.href "http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" ! A.rel "stylesheet"
-    H.script ! A.type_ "text/html" ! A.id "user-template" $
+    H.script ! A.type_ "text/html" ! A.id "student-template" $
         H.div mempty
   H.body $ do
     H.h1 "404 Not found"
@@ -237,7 +237,7 @@ mainView students = H.docTypeHtml $ do
     H.script ! A.type_ "application/javascript" ! A.src "/static/mustache/mustache.js" $ mempty
     H.script ! A.type_ "application/javascript" ! A.src "http://datatables.net/download/build/jquery.dataTables.nightly.js" $ mempty
     H.script ! A.type_ "application/javascript" ! A.src "/static/js/doThings.js" $ mempty
-    H.script ! A.type_ "text/html" ! A.id "userModalTemplate" $
+    H.script ! A.type_ "text/html" ! A.id "studentModalTemplate" $
       H.div ! A.class_ "fluid-row" $ do
         H.div ! A.class_ "span4" $ do
           H.h2 $ "{{name}}"
@@ -261,7 +261,7 @@ mainView students = H.docTypeHtml $ do
               "Placeholder login text. What to do with this?"
             H.ul ! A.class_ "nav" $ do
               H.li $ "emptymenu"
-    userModal
+    studentModal
     H.div ! A.class_ "container-fluid" $ do
       H.div ! A.class_ "row-fluid" $ do
         H.div ! A.class_ "span8" $ do
@@ -304,7 +304,7 @@ main = do
     decodeBody (defaultBodyPolicy "/tmp" 16384 16384 16384)
     evalStateT (msum [
         nullDir >> ok (toResponse $ mainView students)
-      , dir "user" $ userQuery
+      , dir "student" $ studentQuery
       , dirs "student/upload" $ studentsUpload
       , dirs "student/data" $ studentsData
       , dirs "thesis/upload" $ thesisUpload
