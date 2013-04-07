@@ -70,6 +70,7 @@ data Credit = Credit {
   , creditCredits :: Int
   } deriving Show
 newtype DatatableStudent = DatatableStudent Student
+newtype DatatableThesis = DatatableThesis Thesis
 
 $(deriveJSON id ''Season)
 $(deriveJSON id ''Date)
@@ -82,6 +83,12 @@ instance ToJSON DatatableStudent where
       , major student
       , T.pack $ show $ studentPoints student
       , T.pack $ drop 5 $ show $ date student
+    ]
+
+instance ToJSON DatatableThesis where
+  toJSON (DatatableThesis thesis) = toJSON [
+        thesisName thesis
+      , T.pack $ show $ S.size $ thesisCourses thesis
     ]
 
 instance ToMessage Value where
@@ -159,6 +166,11 @@ fileResponse fun = H.docTypeHtml $ do
     H.script ! A.type_ "application/javascript" $
       ("parent." `mappend` fun `mappend` "()")
   H.body $ mempty
+
+thesisData :: Mining Response
+thesisData = do
+  t <- gets thesis
+  ok $ toResponse $ toJSON $ map DatatableThesis $ t
 
 studentsData :: Mining Response
 studentsData = do
@@ -311,6 +323,7 @@ main = do
       , dir "student" $ studentQuery
       , dirs "student/upload" $ studentsUpload
       , dirs "student/data" $ studentsData
+      , dirs "degree/data" $ thesisData
       , dirs "thesis/upload" $ thesisUpload
       , dir "static" $ serveDirectory EnableBrowsing [] "public/"
       ]) state

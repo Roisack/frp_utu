@@ -80,4 +80,15 @@ $(document).ready(function() {
         dataUri: "/student/data"
     });
 
+    window.touchDegree = initPage({
+        template: $("#degreeModalTemplate").text(),
+        dtElem: $("#degreeData .databox"),
+        dtColumns: [
+            { "sTitle": "Degree" },
+            { "sTitle": "# of known courses" },
+        ],
+        moreInfo: function(data) { return $.get("/degree", {studentId: data[0]}); },
+        dataUri: "/degree/data"
+    });
+
 });
