@@ -26,6 +26,14 @@ import qualified Data.Set as S
 import Data.Set (Set)
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Char8 as B
+import Control.Monad.State
+
+data MinedData = MinedData {
+    students :: [Student]
+  , thesis :: [Thesis]
+  -- , courses :: [Course]
+  }
+type Mining a = StateT MinedData (ServerPartT IO) a
 
 type Course        = Text
 type Name          = Text
@@ -112,8 +120,9 @@ userModal = H.div ! A.id "modal_user" ! A.class_ "modal hide fade" $ do
     data_dismiss = attribute "data-dismiss" "data-dismiss=\""
     aria_hidden = attribute "aria-hidden" "aria-hidden=\""
 
-userQuery :: [Student] -> [Thesis] -> ServerPart Response
-userQuery students thesis = do
+userQuery :: Mining Response
+userQuery = do
+  students <- gets students
   id' <- lookText "userId"
   let user = find (\s -> studentId s == id') students
   case user of
@@ -213,11 +222,12 @@ main :: IO ()
 main = do
   thesis <- parseThesis "data/kandit.txt"
   students <- parseStudents "data/opiskelijat.txt"
+  let state = MinedData students thesis
   simpleHTTP nullConf{port=25565} $ do
     decodeBody (defaultBodyPolicy "/tmp" 4096 4096 4096)
-    msum [
+    evalStateT (msum [
         nullDir >> ok (toResponse $ mainView students)
-      , dir "user" $ (userQuery students thesis)
+      , dir "user" $ userQuery
       , dir "static" $ serveDirectory EnableBrowsing [] "public/"
-      ]
+      ]) state
 
