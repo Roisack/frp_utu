@@ -1,4 +1,9 @@
 $(document).ready(function() {
+
+    var currentPage = $(".sidebar-nav a[href='#']").asEventStream('click').map(function(ev) {
+        return $(ev.currentTarget).attr('data-target');
+    }).toProperty('students').skipDuplicates();
+
     // Initialize (users) datatables with constant data
     var modalTemplate = $("#userModalTemplate").text();
     var dusers = $("#databox").dataTable( { 
