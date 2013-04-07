@@ -3,6 +3,21 @@ $(document).ready(function() {
     var currentPage = $(".sidebar-nav a[href='#']").asEventStream('click').map(function(ev) {
         return $(ev.currentTarget).attr('data-target');
     }).toProperty('students').skipDuplicates();
+    currentPage.onValue(function(page) {
+        // Sorry, not the most elegant solution. good enough when there are 3 pages
+        if(page == 'students')
+            $("#userData").show();
+        else
+            $("#userData").hide();
+        if(page == 'degrees')
+            $("#degreeData").show();
+        else
+            $("#degreeData").hide();
+        if(page == 'credits')
+            $("#creditData").show();
+        else
+            $("#creditData").hide();
+    });
 
     var initPage = function(settings) {
         var modalTemplate = settings.template
