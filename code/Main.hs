@@ -18,6 +18,8 @@ import qualified Text.Blaze.Html5 as H
 import Text.Blaze.Html5 (AttributeValue, Html, (!))
 import Text.Blaze.Internal (attribute)
 import qualified Text.Blaze.Html5.Attributes as A
+import qualified Data.Map as M
+import Data.Map (Map)
 import Data.Monoid
 import Data.Aeson
 import Data.Aeson.TH
@@ -29,7 +31,7 @@ import qualified Data.ByteString.Char8 as B
 import Control.Monad.State
 
 data MinedData = MinedData {
-    students :: [Student]
+    students :: Map StudentID Student
   , thesis :: [Thesis]
   -- , courses :: [Course]
   }
@@ -75,10 +77,11 @@ instance ToMessage Value where
   toMessage x = encode x
   toContentType _ = B.pack ("application/json" :: String)
 
-parseStudents :: FilePath -> IO [Student]
-parseStudents path = do
-  catMaybes . map parseStudent . map (T.splitOn ";") .  T.splitOn "\r\n" <$> TI.readFile path
+parseStudents :: FilePath -> IO (Map StudentID Student)
+parseStudents path =
+  toMap . catMaybes . map parseStudent . map (T.splitOn ";") .  T.splitOn "\r\n" <$> TI.readFile path
   where
+    toMap students = M.fromList [(studentId s, s) | s <- students]
     parseStudent (date : studentId : name : points : degree : major : _ ) = do
       let (date', season) = T.splitAt 4 date
       points' <- readMay (T.unpack points)
@@ -124,7 +127,7 @@ userQuery :: Mining Response
 userQuery = do
   students <- gets students
   id' <- lookText "userId"
-  let user = find (\s -> studentId s == id') students
+  let user = M.lookup id' students
   case user of
        Just user' -> ok $ toResponse $ toJSON user'
        Nothing -> notFound $ toResponse $ notFoundView $
@@ -140,7 +143,7 @@ fileResponse fun = H.docTypeHtml $ do
 studentsData :: Mining Response
 studentsData = do
   s <- gets students
-  ok $ toResponse $ toJSON $ map DatatableStudent s
+  ok $ toResponse $ toJSON $ map DatatableStudent $ M.elems s
 
 studentsUpload :: Mining Response
 studentsUpload = do
@@ -186,7 +189,7 @@ uploadForm name title action = let
           H.input ! A.type_ "file" ! A.name name
           H.input ! A.type_ "submit" ! A.class_ "btn" ! A.value "Update"
 
-mainView :: [Student] -> Html
+mainView :: Map StudentID Student -> Html
 mainView students = H.docTypeHtml $ do
   H.head $ do
     H.title title
@@ -199,7 +202,7 @@ mainView students = H.docTypeHtml $ do
     H.link ! A.href "/static/bootstrap/css/bootstrap-responsive.css" ! A.rel "stylesheet"
     H.link ! A.href "http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" ! A.rel "stylesheet"
     H.script ! A.type_ "application/javascript" $
-      H.toHtml $ "var studentData = " `T.append` (E.decodeUtf8 $ encode $ map DatatableStudent students)
+      H.toHtml $ "var studentData = " `T.append` (E.decodeUtf8 $ encode $ map DatatableStudent $ M.elems students)
     H.script ! A.type_ "application/javascript" ! A.src "/static/jquery/jquery-1.9.1.min.js" $ mempty
     H.script ! A.type_ "application/javascript" ! A.src "/static/bootstrap/js/bootstrap.js" $ mempty
     H.script ! A.type_ "application/javascript" ! A.src "http://code.jquery.com/ui/1.10.2/jquery-ui.js" $ mempty
