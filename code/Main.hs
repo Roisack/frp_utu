@@ -5,35 +5,52 @@ import Safe
 import Happstack.Server
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.IO as TI
+import qualified Data.Text.Lazy.Encoding as E
 import Data.Text.Lazy (Text)
 import qualified Data.Vector as V
 import qualified System.IO as IO
 import Control.Applicative
 import Control.Monad
 import Data.Maybe (maybe, catMaybes, listToMaybe)
-import Data.List (groupBy, sortBy, group)
+import Data.List (groupBy, sortBy, group, find)
 import Data.Function (on)
 import qualified Text.Blaze.Html5 as H
-import Text.Blaze.Html5 (Html, (!))
+import Text.Blaze.Html5 (AttributeValue, Html, (!))
 import Text.Blaze.Internal (attribute)
 import qualified Text.Blaze.Html5.Attributes as A
+import qualified Data.Map as M
+import Data.Map (Map)
 import Data.Monoid
 import Data.Aeson
 import Data.Aeson.TH
 import Data.Time
 import qualified Data.Set as S
 import Data.Set (Set)
+import Data.ByteString.Lazy (ByteString)
+import qualified Data.ByteString.Char8 as B
+import Control.Monad.State
 
-type Course        = Text
+data MinedData = MinedData {
+    students :: Map StudentID Student
+  , thesis :: [Thesis]
+  , credits :: [Credit]
+  }
+type Mining a = StateT MinedData (ServerPartT IO) a
+
+type CourseCode    = Text
 type Name          = Text
 type StudentPoints = Int
 type StudentID     = Text
 type Major         = Text
 type Degree        = Text
 type Year          = Int
+data Course = Course {
+    courseCode :: CourseCode
+  , courseCredits :: Int
+  }
 data Thesis        = Thesis {
     thesisName :: Name
-  , thesisCourses :: Set Course
+  , thesisCourses :: Set CourseCode
   } deriving (Show, Eq, Ord)
 data Date          = Date Year Season deriving (Show, Eq, Ord)
 data Season        = Autumn | Spring deriving (Show, Eq, Ord)
@@ -45,50 +62,53 @@ data Student       = Student {
   , degree ::  Degree
   , major :: Major
   } deriving Show
-
-data ThesisQueryRequest = StudentThesisRequest {
-    thesisQueryName :: Maybe Name
-  , thesisQueryCourses :: [Course]
-  }
-data StudentQueryRequest = StudentQueryRequest {
-    studentQueryFirstName :: Maybe Name
-  , studentQueryLastName :: Maybe Name
-  , studentQueryPoints  :: Maybe (BinOp Int)
-  , studentQueryDate  :: Maybe (BinOp Date)
-  , studentQueryDegree  :: Maybe Degree
-  , studentQueryMajor  :: Maybe Major
+data Credit = Credit {
+    creditStudentId :: StudentID
+  , creditId :: Text
+  , creditName :: Text
+  , creditDate :: Text
+  , creditCredits :: Int
   } deriving Show
-data StudentSortRequest = StudentSortByDate SortOrder | StudentSortById SortOrder | StudentSortByName SortOrder | StudentSortByPoints SortOrder | StudentSortByDegree SortOrder | StudentSortByMajor SortOrder
-data ThesisSortRequest = ThesisSortByName SortOrder | ThesisSortByCourses SortOrder
-data SortOrder = Asc | Desc deriving Show
-data BinOp a = AOR (BinOp a) (BinOp a) | AAND (BinOp a) (BinOp a) | AEQ a | AGT a | ALT a | AGTEQ a | ALTEQ a deriving Show
+newtype DatatableStudent = DatatableStudent Student
+newtype DatatableThesis = DatatableThesis Thesis
 
-evalBinOp :: (Eq a, Ord a) => a -> BinOp a -> Bool
-evalBinOp x (AEQ y) = x == y
-evalBinOp x (ALT y) = x < y
-evalBinOp x (AGT y) = x > y
-evalBinOp x (AOR a b) = evalBinOp x a || evalBinOp x b
-evalBinOp x (AAND a b) = evalBinOp x a && evalBinOp x b
-
-newtype StudentQueryResponse = StudentQueryResponse ([Student])
-newtype ThesisQueryResponse = ThesisQueryResponse ([Thesis])
-$(deriveJSON id ''BinOp)
-$(deriveJSON (drop 12) ''StudentQueryRequest)
 $(deriveJSON id ''Season)
 $(deriveJSON id ''Date)
 $(deriveJSON id ''Student)
-$(deriveJSON id ''StudentQueryResponse)
-$(deriveJSON id ''ThesisQueryResponse)
-$(deriveJSON id ''SortOrder)
-$(deriveJSON id ''StudentSortRequest)
-$(deriveJSON id ''ThesisSortRequest)
-$(deriveJSON (drop 6) ''Thesis)
-$(deriveJSON (drop 11) ''ThesisQueryRequest)
+instance ToJSON DatatableStudent where
+  toJSON (DatatableStudent student) = toJSON [
+        studentId student
+      , name student
+      , degree student
+      , major student
+      , T.pack $ show $ studentPoints student
+      , T.pack $ drop 5 $ show $ date student
+    ]
 
-parseStudents :: FilePath -> IO [Student]
-parseStudents path = do
-  catMaybes . map parseStudent . map (T.splitOn ";") .  T.splitOn "\r\n" <$> TI.readFile path
+instance ToJSON DatatableThesis where
+  toJSON (DatatableThesis thesis) = toJSON [
+        thesisName thesis
+      , T.pack $ show $ S.size $ thesisCourses thesis
+    ]
+
+instance ToMessage Value where
+  toMessage x = encode x
+  toContentType _ = B.pack ("application/json" :: String)
+
+parseCredits :: FilePath -> IO [Credit]
+parseCredits path =
+  catMaybes . map parseCredit . map (T.splitOn ";") .  T.splitOn "\r\n" <$> TI.readFile path
   where
+    parseCredit (sid : cid : name : date : credits : _ ) = do
+      credits' <- readMay $ T.unpack credits
+      return $ Credit sid cid name date credits'
+    parseCredit _ = Nothing
+
+parseStudents :: FilePath -> IO (Map StudentID Student)
+parseStudents path =
+  toMap . catMaybes . map parseStudent . map (T.splitOn ";") .  T.splitOn "\r\n" <$> TI.readFile path
+  where
+    toMap students = M.fromList [(studentId s, s) | s <- students]
     parseStudent (date : studentId : name : points : degree : major : _ ) = do
       let (date', season) = T.splitAt 4 date
       points' <- readMay (T.unpack points)
@@ -116,8 +136,100 @@ parseThesis path = do
       courses <- listToMaybe $ groupBy ((==) `on` fst) [T.breakOn " " course | course <- drop (n+1) contents']
       return $ zipWith (\name course -> Thesis name (S.fromList $ map snd course)) names courses
 
-mainView :: Html
-mainView = H.docTypeHtml $ do
+studentModal :: Html
+studentModal = H.div ! A.id "modal" ! A.class_ "modal hide fade" $ do
+  H.div ! A.class_ "modal-header" $ do
+    H.button ! A.type_ "button" ! A.class_ "close" ! data_dismiss "modal" ! aria_hidden "true" $
+      "x"
+    H.h3 ! A.id "student_header" $ mempty
+  H.div ! A.class_ "modal-body" ! A.id "modalBody" $ do
+    mempty
+  H.div ! A.class_ "modal-footer" $ do
+    H.a ! A.href "#" ! A.class_ "btn close" $ "Close"
+  where
+    data_dismiss = attribute "data-dismiss" "data-dismiss=\""
+    aria_hidden = attribute "aria-hidden" "aria-hidden=\""
+
+studentQuery :: Mining Response
+studentQuery = do
+  students <- gets students
+  id' <- lookText "studentId"
+  let student = M.lookup id' students
+  case student of
+       Just student' -> ok $ toResponse $ toJSON student'
+       Nothing -> notFound $ toResponse $ notFoundView $
+         H.p "User is not found"
+
+fileResponse ::  Html -> Html
+fileResponse fun = H.docTypeHtml $ do
+  H.head $
+    H.script ! A.type_ "application/javascript" $
+      ("parent." `mappend` fun `mappend` "()")
+  H.body $ mempty
+
+thesisData :: Mining Response
+thesisData = do
+  t <- gets thesis
+  ok $ toResponse $ toJSON $ map DatatableThesis $ t
+
+studentsData :: Mining Response
+studentsData = do
+  s <- gets students
+  ok $ toResponse $ toJSON $ map DatatableStudent $ M.elems s
+
+studentsUpload :: Mining Response
+studentsUpload = do
+  (path, _, _) <- lookFile "studentFile"
+  newStudents <- liftIO $ parseStudents path
+  modify (\m -> m{students=newStudents})
+  ok $ toResponse $ fileResponse "touchStudents"
+
+thesisUpload :: Mining Response
+thesisUpload = do
+  (path, _, _) <- lookFile "thesisFile"
+  newThesis <- liftIO $ parseThesis path
+  modify (\m -> m{thesis=newThesis})
+  ok $ toResponse $ fileResponse "touchThesis"
+
+creditsUpload :: Mining Response
+creditsUpload = do
+  (path, _, _) <- lookFile "creditsFile"
+  newCredits <- liftIO $ parseCredits path
+  modify (\m -> m{credits=newCredits})
+  ok $ toResponse $ fileResponse "touchCredits"
+
+notFoundView :: Html -> Html
+notFoundView inner = H.docTypeHtml $ do
+  H.head $ do
+    H.title "Not found"
+    H.meta ! A.charset "utf-8"
+    H.meta ! A.name "viewport"    ! A.content "width=device-width, initial-scale=1.0"
+    H.meta ! A.name "description" ! A.content ""
+    H.meta ! A.name "author"      ! A.content ""
+    H.link ! A.href "/static/bootstrap/css/bootstrap.css"            ! A.rel "stylesheet"
+    H.link ! A.href "/static/css/style.css"                          ! A.rel "stylesheet"
+    H.link ! A.href "/static/bootstrap/css/bootstrap-responsive.css" ! A.rel "stylesheet"
+    H.link ! A.href "http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" ! A.rel "stylesheet"
+    H.script ! A.type_ "text/html" ! A.id "student-template" $
+        H.div mempty
+  H.body $ do
+    H.h1 "404 Not found"
+    H.div ! A.class_ "span9 well" $
+      inner
+
+uploadForm :: AttributeValue -> Text -> AttributeValue -> Html
+uploadForm name title action = let
+  iframeName = ("iframe" `mappend` name)
+  in H.div ! A.class_ "fluid-row" ! A.style "display: none" $
+      H.div ! A.class_ "span3" $ do
+        H.h3 $ H.toHtml title
+        H.iframe ! A.name iframeName ! A.style "display: none" $ mempty
+        H.form ! A.action action ! A.target iframeName ! A.class_ "form-inline" ! A.enctype "multipart/form-data" ! A.method "post" $ do
+          H.input ! A.type_ "file" ! A.name name
+          H.input ! A.type_ "submit" ! A.class_ "btn" ! A.value "Update"
+
+mainView :: Map StudentID Student -> Html
+mainView students = H.docTypeHtml $ do
   H.head $ do
     H.title title
     H.meta ! A.charset "utf-8"
@@ -127,14 +239,26 @@ mainView = H.docTypeHtml $ do
     H.link ! A.href "/static/bootstrap/css/bootstrap.css"            ! A.rel "stylesheet"
     H.link ! A.href "/static/css/style.css"                          ! A.rel "stylesheet"
     H.link ! A.href "/static/bootstrap/css/bootstrap-responsive.css" ! A.rel "stylesheet"
-  H.script ! A.type_ "application/javascript" ! A.src "/static/jquery/jquery-1.9.1.min.js" $ mempty
-  H.script ! A.type_ "application/javascript" ! A.src "/static/bacon/js/Bacon.js" $ mempty
-  H.script ! A.type_ "application/javascript" ! A.src "/static/bootstrap/js/bootstrap.js" $ mempty
-  H.script ! A.type_ "application/javascript" ! A.src "/static/mustache/mustache.js" $ mempty
-  H.script ! A.type_ "application/javascript" ! A.src "http://datatables.net/download/build/jquery.dataTables.nightly.js" $ mempty
-  H.script ! A.type_ "application/javascript" ! A.src "/static/js/doThings.js" $ mempty
-  H.script ! A.type_ "text/html" ! A.id "user-template" $
-      H.div mempty
+    H.link ! A.href "http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" ! A.rel "stylesheet"
+    H.script ! A.type_ "application/javascript" $
+      H.toHtml $ "var studentData = " `T.append` (E.decodeUtf8 $ encode $ map DatatableStudent $ M.elems students)
+    H.script ! A.type_ "application/javascript" ! A.src "/static/jquery/jquery-1.9.1.min.js" $ mempty
+    H.script ! A.type_ "application/javascript" ! A.src "/static/bootstrap/js/bootstrap.js" $ mempty
+    H.script ! A.type_ "application/javascript" ! A.src "http://code.jquery.com/ui/1.10.2/jquery-ui.js" $ mempty
+    H.script ! A.type_ "application/javascript" ! A.src "/static/bacon/js/Bacon.js" $ mempty
+    H.script ! A.type_ "application/javascript" ! A.src "/static/mustache/mustache.js" $ mempty
+    H.script ! A.type_ "application/javascript" ! A.src "http://datatables.net/download/build/jquery.dataTables.nightly.js" $ mempty
+    H.script ! A.type_ "application/javascript" ! A.src "/static/js/doThings.js" $ mempty
+    H.script ! A.type_ "text/html" ! A.id "studentModalTemplate" $
+      H.div ! A.class_ "fluid-row" $ do
+        H.div ! A.class_ "span4" $ do
+          H.h2 $ "{{name}}"
+          H.hr
+          H.p $ "{{degree}}"
+          H.p $ "{{major}}"
+          H.p $ "{{date}}"
+          H.p $ "{{studentId}}"
+          H.p $ "{{studentPoints}}"
   H.body $ do
     H.div ! A.id "infoModal" ! A.class_ "modal hide fade" $ do
       H.div ! A.class_ "modal-header" ! A.id "infoModalHeader" $ do
@@ -156,122 +280,58 @@ mainView = H.docTypeHtml $ do
               "Placeholder login text. What to do with this?"
             H.ul ! A.class_ "nav" $ do
               H.li $ "emptymenu"
-    H.div ! A.class_ "container-fluid" $
-      H.div ! A.class_ "row-fluid" $
-        H.div ! A.class_ "span3" $
-          H.div ! A.class_ "well sidebar-nav" $
-            H.ul ! A.class_ "nav nav-list" $ do
-              H.li ! A.class_ "nav-header" $ "Sidebar"
-              H.li $ H.a ! A.href "#" $ "Link"
-              H.li $ H.a ! A.href "#" $ "Link"
-              H.li $ H.a ! A.href "#" $ "Link"
-              H.li $ H.a ! A.href "#" $ "Link"
-    H.div ! A.class_ "span9" $ do
+    studentModal
+    H.div ! A.class_ "container-fluid" $ do
       H.div ! A.class_ "row-fluid" $ do
-        H.div ! A.id "table_mode" $ do
-          H.button ! A.id "mode_students" ! A.class_ "btn" $ "Students"
-          H.button ! A.id "mode_degrees" ! A.class_ "btn" $ "Degrees"
-          H.button ! A.id "mode_courses" ! A.class_ "btn" $ "Courses"
-        H.div ! A.id "controlpanel" $ do
-          H.h2 $ "Filters"
-          H.form ! A.id "coolform" $ do
-            H.input ! A.type_ "text" ! A.placeholder "Enter filter text" ! A.id "filterstring"
-            H.p $ "Apply filter for"
-            H.label ! A.type_ "text" $ "First name"
-            H.input ! A.type_ "checkbox" ! A.id "firstName"
-            H.label ! A.type_ "text" $ "Last name"
-            H.input ! A.type_ "checkbox" ! A.id "lastName"
-            H.label ! A.type_ "text" $ "Student number"
-            H.input ! A.type_ "checkbox" ! A.id "studentNumber"
-            H.label ! A.type_ "text" $ "Degree"
-            H.input ! A.type_ "checkbox" ! A.id "degree"
-            H.label ! A.type_ "text" $ "Points"
-            H.input ! A.type_ "checkbox" ! A.id "points"
-            H.label ! A.type_ "text" $ "Major"
-            H.input ! A.type_ "checkbox" ! A.id "major"
-            H.br
-            H.br
-            H.button ! A.id "form_submit" ! A.class_ "btn" $ "Execute"
-      H.div ! A.class_ "hero-unit" ! A.id "databox" $ do
-        H.p $ "stuff here"
-      H.div ! A.class_ "row-fluid" $
-        H.div ! A.class_ "span4" $ do
-          H.p "Smaller element"
-      H.div ! A.class_ "row-fluid" $
-        H.div ! A.class_ "span4" $ do
-          H.p "Smaller element"
+        H.div ! A.class_ "span8" $ do
+          H.div ! A.class_ "span3" $
+            H.div ! A.class_ "well sidebar-nav" $
+              H.ul ! A.class_ "nav nav-list" $ do
+                H.li ! A.class_ "nav-header" $ "Sidebar"
+                H.li $ H.a ! data_target "students" ! A.href "#" $ "Students"
+                H.li $ H.a ! data_target "degrees" ! A.href "#" $ "Degreees"
+                H.li $ H.a ! data_target "credits" ! A.href "#" $ "Credits"
+          H.div ! A.class_ "span4" $ do
+            uploadForm "studentFile" "Update students file" "student/upload"
+            uploadForm "thesisFile" "Update thesis file" "thesis/upload"
+            uploadForm "creditsFile" "Update credits file" "credits/upload"
+    H.div ! A.class_ "span9" $ do
+      H.div ! A.id "userData" ! A.class_ "hero-unit" $ do
+        H.table ! A.class_ "databox" $ mempty
+      H.div ! A.id "degreeData" ! A.style "display: none" ! A.class_ "hero-unit" $ do
+        H.table ! A.class_ "databox" $ mempty
+      H.div ! A.id "creditData" ! A.style "display: none" ! A.class_ "hero-unit" $ do
+        H.table ! A.class_ "databox" $ mempty
   where
-    data_toggle = attribute "data-toggle" "data-toggle=\""
-    data_target = attribute "data-target" "data-target=\""
+    data_toggle = attribute "data-toggle" " data-toggle=\""
+    data_target = attribute "data-target" " data-target=\""
     title = "Käyttöliittymät harkka"
 
-queryStudents :: [Student] -> ServerPart Response
-queryStudents students = do
-  query <- join . fmap decode . listToMaybe <$> lookBSs "query"
-  -- sorting <- fmap ((maybe [] id) . decode) . listToMaybe <$> lookBSs "sort"
-  case query of
-       Nothing -> ok $ toResponse $ encode $ StudentQueryResponse $ students
-       Just query' -> ok $ toResponse $ encode $ StudentQueryResponse $ filter (buildFilter query') students
-  where
-    sort (s:ss) students = concat $ map (sort ss) $ groupBy (groupFun s) $ sortBy (sortFun s) students
-    sortDir Asc = id
-    sortDir Desc = flip
-    sortFun (StudentSortByDate dir)   = sortDir dir (compare `on` date)
-    sortFun (StudentSortById dir)     = sortDir dir (compare `on` studentId)
-    sortFun (StudentSortByName dir)   = sortDir dir (compare `on` name)
-    sortFun (StudentSortByPoints dir) = sortDir dir (compare `on` studentPoints)
-    sortFun (StudentSortByDegree dir) = sortDir dir (compare `on` degree)
-    sortFun (StudentSortByMajor dir)  = sortDir dir (compare `on` major)
-    groupFun (StudentSortByDate _)   = (==) `on` date
-    groupFun (StudentSortById _)     = (==) `on` studentId
-    groupFun (StudentSortByName _)   = (==) `on` name
-    groupFun (StudentSortByPoints _) = (==) `on` studentPoints
-    groupFun (StudentSortByDegree _) = (==) `on` degree
-    groupFun (StudentSortByMajor _)  = (==) `on` major
-    buildFilter query student = and . catMaybes $ [
-        ((firstName' ==) <$> studentQueryFirstName query)
-      , ((lastName' ==) <$> studentQueryLastName query)
-      , ((degree student ==) <$> studentQueryDegree query)
-      , ((major student ==) <$> studentQueryMajor query)
-      , ((evalBinOp (studentPoints student)) <$> studentQueryPoints query)
-      , ((evalBinOp (date student)) <$> studentQueryDate query)
-      ]
-      where
-        (firstName', lastName') = T.breakOn " " (name student)
+lookBSsafe :: (Monad m, Functor m, HasRqData m) => String -> m (Maybe ByteString)
+lookBSsafe key = listToMaybe <$> lookBSs key
 
-queryThesis :: [Thesis] -> ServerPart Response
-queryThesis thesis = do
-  query <- decode <$> lookBS "query"
-  sorting <- (maybe [] id) . decode <$> lookBS "sort"
-  ok .
-    toResponse .
-    encode .
-    ThesisQueryResponse .
-    sort sorting .
-    maybe thesis (\q -> filter (buildFilter q) thesis) $ query
-  where
-    sort (s:ss) thesis = concat $ map (sort ss) $ groupBy (groupFun s) $ sortBy (sortFun s) thesis
-    sortDir Asc = id
-    sortDir Desc = flip
-    sortFun (ThesisSortByName dir) = sortDir dir (compare `on` thesisName)
-    sortFun (ThesisSortByCourses dir) = sortDir dir (compare `on` thesisCourses)
-    groupFun (ThesisSortByCourses _) = (==) `on` thesisCourses
-    groupFun (ThesisSortByName _) = (==) `on` thesisName
-    buildFilter query thesis = and . catMaybes $ [
-        (thesisName thesis ==) <$> thesisQueryName query
-      , Just $ (S.fromList $ thesisQueryCourses query) `S.isSubsetOf` (thesisCourses thesis)
-      ]
+looksafe :: (Monad m, Functor m, HasRqData m) => String -> m (Maybe String)
+looksafe key = listToMaybe <$> looks key
+
+studentsCredits ::  Student -> [Credit] -> [Credit]
+studentsCredits student credits =
+  filter (\c -> studentId student == creditStudentId c) credits
 
 main :: IO ()
 main = do
   thesis <- parseThesis "data/kandit.txt"
   students <- parseStudents "data/opiskelijat.txt"
+  credits <- parseCredits "data/suoritukset.txt"
+  let state = MinedData students thesis credits
   simpleHTTP nullConf{port=25565} $ do
-    decodeBody (defaultBodyPolicy "/tmp" 4096 4096 4096)
-    msum [
-        nullDir >> ok (toResponse mainView)
-      , dir "students" $ (queryStudents students)
-      , dir "thesis" $ (queryThesis thesis)
+    decodeBody (defaultBodyPolicy "/tmp" 16384 16384 16384)
+    evalStateT (msum [
+        nullDir >> ok (toResponse $ mainView students)
+      , dir "student" $ studentQuery
+      , dirs "student/upload" $ studentsUpload
+      , dirs "student/data" $ studentsData
+      , dirs "degree/data" $ thesisData
+      , dirs "thesis/upload" $ thesisUpload
       , dir "static" $ serveDirectory EnableBrowsing [] "public/"
-      ]
+      ]) state
 
