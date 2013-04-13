@@ -25,7 +25,7 @@ import Data.Aeson
 import Data.Aeson.TH
 import Data.Time
 import qualified Data.Set as S
-import Data.Set (Set)
+import Data.Set (Set, (\\))
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Char8 as B
 import Control.Monad.State
@@ -153,12 +153,27 @@ studentModal = H.div ! A.id "modal" ! A.class_ "modal hide fade" $ do
 studentQuery :: Mining Response
 studentQuery = do
   students <- gets students
+  thesis <- gets thesis
+  credits <- gets credits
   id' <- lookText "studentId"
   let student = M.lookup id' students
   case student of
-       Just student' -> ok $ toResponse $ toJSON student'
+       Just student' -> ok $ toResponse $ toJSON $ studentObject thesis credits student'
        Nothing -> notFound $ toResponse $ notFoundView $
          H.p "User is not found"
+  where
+    studentObject thesis credits student = let
+      studentsCredits = sum $ map creditCredits studentsCourses
+      studentsCourses = filter (\c -> creditStudentId c == studentId student) credits
+      requiredCourses = maybe S.empty thesisCourses $ find (\t -> thesisName t == degree student) thesis
+      missingCourses = [object ["thesis" .= thesisName t, "missingCourses" .= S.toList (thesisCourses t \\ S.fromList (map creditName studentsCourses))] | t <- thesis]
+      in object [
+              "student" .= student
+            , "studentsCredits" .= (T.pack . show $ studentsCredits)
+            , "studentsCourses" .= studentsCourses
+            , "missingCourses" .= missingCourses
+            , "requiredCourses" .= S.toList requiredCourses
+          ]
 
 fileResponse ::  Html -> Html
 fileResponse fun = H.docTypeHtml $ do
