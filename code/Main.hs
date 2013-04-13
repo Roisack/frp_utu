@@ -167,6 +167,15 @@ fileResponse fun = H.docTypeHtml $ do
       ("parent." `mappend` fun `mappend` "()")
   H.body $ mempty
 
+creditsData :: Mining Response
+creditsData = do
+  c <- gets credits
+  ok . toResponse . toJSON . combineResults $ c
+  where
+    combineResults credits = let
+      courses = foldr (\c m -> M.insert (creditId c) (creditId c, creditName c, creditCredits c) m) mempty credits
+      in [[id', name, T.pack . show $ credit] | (id', name, credit) <- M.elems courses]
+
 thesisData :: Mining Response
 thesisData = do
   t <- gets thesis
@@ -300,7 +309,7 @@ mainView students = H.docTypeHtml $ do
         H.table ! A.class_ "databox" $ mempty
       H.div ! A.id "degreeData" ! A.style "display: none" ! A.class_ "hero-unit" $ do
         H.table ! A.class_ "databox" $ mempty
-      H.div ! A.id "creditData" ! A.style "display: none" ! A.class_ "hero-unit" $ do
+      H.div ! A.id "courseData" ! A.style "display: none" ! A.class_ "hero-unit" $ do
         H.table ! A.class_ "databox" $ mempty
   where
     data_toggle = attribute "data-toggle" " data-toggle=\""
@@ -331,6 +340,7 @@ main = do
       , dirs "student/upload" $ studentsUpload
       , dirs "student/data" $ studentsData
       , dirs "degree/data" $ thesisData
+      , dirs "course/data" $ creditsData
       , dirs "thesis/upload" $ thesisUpload
       , dir "static" $ serveDirectory EnableBrowsing [] "public/"
       ]) state

@@ -14,9 +14,9 @@ $(document).ready(function() {
         else
             $("#degreeData").hide();
         if(page == 'credits')
-            $("#creditData").show();
+            $("#courseData").show();
         else
-            $("#creditData").hide();
+            $("#courseData").hide();
     });
 
     var initPage = function(settings) {
@@ -87,8 +87,20 @@ $(document).ready(function() {
             { "sTitle": "Degree" },
             { "sTitle": "# of known courses" },
         ],
-        moreInfo: function(data) { return $.get("/degree", {studentId: data[0]}); },
+        moreInfo: function(data) { return $.get("/degree", {thesisId: data[0]}); },
         dataUri: "/degree/data"
+    });
+
+    window.touchCourse = initPage({
+        template: $("#degreeModalTemplate").text(),
+        dtElem: $("#courseData .databox"),
+        dtColumns: [
+            { "sTitle": "Course id" },
+            { "sTitle": "Course name" },
+            { "sTitle": "Course credits" },
+        ],
+        moreInfo: function(data) { return $.get("/course", {courseId: data[0]}); },
+        dataUri: "/course/data"
     });
 
 });
