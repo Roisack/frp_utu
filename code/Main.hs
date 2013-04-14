@@ -161,6 +161,26 @@ studentModal = H.div ! A.id "modal" ! A.class_ "modal hide fade" $ do
     data_dismiss = attribute "data-dismiss" "data-dismiss=\""
     aria_hidden = attribute "aria-hidden" "aria-hidden=\""
 
+thesisQuery :: Mining Response
+thesisQuery = do
+  students <- gets students
+  thesis <- gets thesis
+  credits <- gets credits
+  id' <- lookText "thesisId"
+  maybe 
+    (notFound $ toResponse $ notFoundView $ H.p "Thesis not found")
+    (ok . toResponse . toJSON . thesisInfo students credits)
+    (find (\t -> id' == thesisName t) thesis)
+  where
+    thesisInfo students credits thesis = let
+      studentsCourses = [(s, filter (\c -> creditStudentId c == studentId s) credits) | s <- M.elems students]
+      eligibleStudents =  filter ((> 0) . S.size . snd) [(studentId s, S.intersection (thesisCourses thesis) (S.fromList $ map creditId c) ) | (s,c) <- studentsCourses]
+      in object [
+          "thesis" .= thesis
+        , "eligibleStudents" .= eligibleStudents
+        , "courses" .= studentsCourses
+        ]
+
 studentQuery :: Mining Response
 studentQuery = do
   students <- gets students
@@ -369,6 +389,7 @@ main = do
     evalStateT (msum [
         nullDir >> ok (toResponse $ mainView students)
       , dir "student" $ studentQuery
+      , dir "thesis" $ thesisQuery
       , dirs "student/upload" $ studentsUpload
       , dirs "student/data" $ studentsData
       , dirs "degree/data" $ thesisData
