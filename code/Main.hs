@@ -69,12 +69,22 @@ data Credit = Credit {
   , creditDate :: Text
   , creditCredits :: Int
   } deriving Show
+newtype DatatableCourse = DatatableCourse Credit
 newtype DatatableStudent = DatatableStudent Student
 newtype DatatableThesis = DatatableThesis Thesis
 
 $(deriveJSON id ''Season)
 $(deriveJSON id ''Date)
 $(deriveJSON id ''Student)
+$(deriveJSON id ''Credit)
+
+instance ToJSON DatatableCourse where
+  toJSON (DatatableCourse credit) = toJSON [
+        creditId credit
+      , creditName credit
+      , T.pack . show . creditCredits $ credit
+    ]
+
 instance ToJSON DatatableStudent where
   toJSON (DatatableStudent student) = toJSON [
         studentId student
@@ -172,7 +182,6 @@ studentQuery = do
             , "studentsCredits" .= (T.pack . show $ studentsCredits)
             , "studentsCourses" .= studentsCourses
             , "missingCourses" .= missingCourses
-            , "requiredCourses" .= S.toList requiredCourses
           ]
 
 fileResponse ::  Html -> Html
@@ -181,6 +190,13 @@ fileResponse fun = H.docTypeHtml $ do
     H.script ! A.type_ "application/javascript" $
       ("parent." `mappend` fun `mappend` "()")
   H.body $ mempty
+
+unionCoursesData :: Mining Response
+unionCoursesData = do
+  t <- gets thesis
+  ok . toResponse . toJSON . unionCourses $ t
+  where
+    unionCourses thesis = S.toList $ foldr (\t s -> S.union s (thesisCourses t)) mempty thesis
 
 creditsData :: Mining Response
 creditsData = do
@@ -355,7 +371,8 @@ main = do
       , dirs "student/upload" $ studentsUpload
       , dirs "student/data" $ studentsData
       , dirs "degree/data" $ thesisData
-      , dirs "course/data" $ creditsData
+      , dirs "course/data" $ do { nullDir; creditsData }
+      , dirs "course/data/union" $ unionCoursesData
       , dirs "thesis/upload" $ thesisUpload
       , dir "static" $ serveDirectory EnableBrowsing [] "public/"
       ]) state
