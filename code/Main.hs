@@ -145,7 +145,7 @@ parseThesis path = do
       n <- parseThesisCount contents'
       names <- parseThesisNames contents' n
       courses <- listToMaybe $ groupBy ((==) `on` fst) [T.breakOn " " course | course <- drop (n+1) contents']
-      return $ zipWith (\name course -> Thesis name (S.fromList $ map snd course)) names courses
+      return $ zipWith (\name course -> Thesis name (S.fromList $ map (T.strip . snd) course)) names courses
 
 studentModal :: Html
 studentModal = H.div ! A.id "modal" ! A.class_ "modal hide fade" $ do
