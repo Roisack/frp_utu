@@ -174,7 +174,7 @@ thesisQuery = do
   where
     thesisInfo students credits thesis = let
       studentsCourses = [(s, filter (\c -> creditStudentId c == studentId s) credits) | s <- M.elems students]
-      eligibleStudents =  filter ((> 0) . S.size . snd) [(studentId s, S.intersection (thesisCourses thesis) (S.fromList $ map creditId c) ) | (s,c) <- studentsCourses]
+      eligibleStudents =  sortBy (compare `on` (S.size . snd)) $ filter ((> 0) . S.size . snd) [(studentId s, S.intersection (thesisCourses thesis) (S.fromList $ map creditId c) ) | (s,c) <- studentsCourses]
       in object [
           "thesis" .= thesis
         , "eligibleStudents" .= eligibleStudents
