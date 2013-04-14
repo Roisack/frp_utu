@@ -77,6 +77,7 @@ $(deriveJSON id ''Season)
 $(deriveJSON id ''Date)
 $(deriveJSON id ''Student)
 $(deriveJSON id ''Credit)
+$(deriveJSON id ''Thesis)
 
 instance ToJSON DatatableCourse where
   toJSON (DatatableCourse credit) = toJSON [
