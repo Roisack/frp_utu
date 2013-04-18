@@ -1,7 +1,8 @@
 // When the page has been loaded
 $(document).ready(function() {
-
     
+    var tempdata;
+
     var currentPage = $(".sidebar-nav a[href='#']").asEventStream('click').map(function(ev) {
         return $(ev.currentTarget).attr('data-target');
     }).toProperty('students').skipDuplicates();
@@ -59,6 +60,7 @@ $(document).ready(function() {
         }).map(function(json) {
             // Use Mustache.js to render the data into HTML based on a modalTemplate which
             // exists in the main HTML itself
+            tempdata = json;
             return Mustache.render(modalTemplate, json);
         }).toProperty("");
 
@@ -76,6 +78,18 @@ $(document).ready(function() {
         // Write the final HTML in the #modalBody div
         templateProperty.assign($('#modalBody'), 'html');
         touch();
+
+        var columns = [
+            { "sTitle": "Course code" },
+            { "sTitle": "Credits" },
+            { "sTitle": "Date" },
+            { "sTitle": "Student number" },
+        ];
+
+        var dtable2 = $("#studentData").dataTable( {
+            "bJQueryUI": true,
+            "aoColumns": columns
+        });
 
         return touch;
     }

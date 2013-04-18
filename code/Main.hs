@@ -313,13 +313,30 @@ mainView students = H.docTypeHtml $ do
     H.script ! A.type_ "text/html" ! A.id "studentModalTemplate" $
       H.div ! A.class_ "fluid-row" $ do
         H.div ! A.class_ "span4" $ do
-          H.h2 $ "{{name}}"
+          H.h2 $ "{{student.name}}"
           H.hr
-          H.p $ "{{degree}}"
-          H.p $ "{{major}}"
-          H.p $ "{{date}}"
-          H.p $ "{{studentId}}"
-          H.p $ "{{studentPoints}}"
+          H.p $ "Degree: {{student.degree}}"
+          H.p $ "Major: {{student.major}}"
+          H.p $ "Enrollment date: {{student.date.0}}, {{student.date.1}}"
+          H.p $ "Student number: {{student.studentId}}"
+          H.p $ "Credits: {{student.studentPoints}}"
+          H.hr
+          H.div ! A.class_ "span4" ! A.id "studentData" $ mempty
+    H.script ! A.type_ "text/html" ! A.id "creditModalTemplate" $
+      H.div ! A.class_ "fluid-row" $ do
+        H.div ! A.class_ "span4" $ do
+          H.h2 $ "{{creditName}}"
+          H.hr
+          H.p $ "Course code: {{creditId}}"
+          H.p $ "Credits: {{creditCredits}}"
+          H.p $ "Date: {{creditDate}}"
+          H.p $ "Student number: {{StudentId}}"
+    H.script ! A.type_ "text/html" ! A.id "degreeModalTemplate" $
+      H.div ! A.class_ "fluid-row" $ do
+        H.div ! A.class_ "span4" $ do
+          H.h2 $ "{{thesis.thesisName}}"
+          H.hr
+          H.p $ "{{thesis.thesisCourses}}"
   H.body $ do
     H.div ! A.id "infoModal" ! A.class_ "modal hide fade" $ do
       H.div ! A.class_ "modal-header" ! A.id "infoModalHeader" $ do
@@ -384,7 +401,7 @@ main = do
   students <- parseStudents "data/opiskelijat.txt"
   credits <- parseCredits "data/suoritukset.txt"
   let state = MinedData students thesis credits
-  simpleHTTP nullConf{port=25565} $ do
+  simpleHTTP nullConf{port=10001} $ do
     decodeBody (defaultBodyPolicy "/tmp" 16384 16384 16384)
     evalStateT (msum [
         nullDir >> ok (toResponse $ mainView students)
