@@ -321,7 +321,32 @@ mainView students = H.docTypeHtml $ do
           H.p $ "Student number: {{student.studentId}}"
           H.p $ "Credits: {{student.studentPoints}}"
           H.hr
-          H.div ! A.class_ "span4" ! A.id "studentData" $ mempty
+          H.table ! A.class_ "table" $ do
+            H.p $ "Missing courses:"
+            H.tr $ do
+              H.th $ "Course ID"
+              H.th $ "Thesis"
+            H.p $ "{{#missingCourses}}"
+            H.p $ "{{#missingCourses}}"
+            H.tr $ do
+              H.td $ "{{.}}"
+              H.td $ "{{thesis}}"
+            H.p $ "{{/missingCourses}}"
+            H.p $ "{{/missingCourses}}"
+          H.p $ "Completed courses"
+          H.table ! A.class_ "table" $ do
+            H.tr $ do
+              H.th $ "Course ID"
+              H.th $ "Course name"
+              H.th $ "Credits"
+              H.th $ "Date"
+            H.p $ "{{#studentsCourses}}"
+            H.tr $ do
+              H.td $ "{{creditId}}"
+              H.td $ "{{creditName}}"
+              H.td $ "{{creditCredits}}"
+              H.td $ "{{creditDate}}"
+            H.p $ "{{/studentsCourses}}"
     H.script ! A.type_ "text/html" ! A.id "creditModalTemplate" $
       H.div ! A.class_ "fluid-row" $ do
         H.div ! A.class_ "span4" $ do
