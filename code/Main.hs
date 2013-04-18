@@ -361,7 +361,15 @@ mainView students = H.docTypeHtml $ do
         H.div ! A.class_ "span4" $ do
           H.h2 $ "{{thesis.thesisName}}"
           H.hr
-          H.p $ "{{thesis.thesisCourses}}"
+          H.table ! A.class_ "table" $ do
+            H.tr $ do
+              H.th $ "Thesis"
+              H.th $ "Course"
+            H.p $ "{{#thesis.thesisCourses}}"
+            H.tr $ do
+              H.td $ "{{thesis.thesisName}}"
+              H.td $ "{{.}}"
+            H.p $ "{{/thesis.thesisCourses}}"
   H.body $ do
     H.div ! A.id "infoModal" ! A.class_ "modal hide fade" $ do
       H.div ! A.class_ "modal-header" ! A.id "infoModalHeader" $ do
