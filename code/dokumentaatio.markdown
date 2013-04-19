@@ -41,7 +41,7 @@ Seuraavat oleelliset tyypit määrittävät miten tietoa käsitellään:
 * thesisUpload lähettää uudet opinto-ohjelmatiedot sivun datatableen
 * creditsUpload lähettää uudet suoritustiedot sivun datatableen
 * notFoundView tuottaa HTML-sivun, joka vastaa virhettä 404
-* uploadForm luo näkymättömän iframen, jonka kautta voidaan lähettää tietoja sivulle
+* uploadForm tuottaa HTML-koodin, joka esittää sivulla kentän uuden datan syöttämiseen ohjelmaan
 * mainView tuottaa itse sivun HTML-koodin
 * lookBSsafe
 * looksafe
