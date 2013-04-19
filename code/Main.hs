@@ -309,7 +309,7 @@ mainView students = H.docTypeHtml $ do
     H.script ! A.type_ "application/javascript" ! A.src "/static/bacon/js/Bacon.js" $ mempty
     H.script ! A.type_ "application/javascript" ! A.src "/static/mustache/mustache.js" $ mempty
     H.script ! A.type_ "application/javascript" ! A.src "http://datatables.net/download/build/jquery.dataTables.nightly.js" $ mempty
-    H.script ! A.type_ "application/javascript" ! A.src "/static/js/doThings.js" $ mempty
+    H.script ! A.type_ "application/javascript" ! A.src "/static/js/pageFunctionality.js" $ mempty
     H.script ! A.type_ "text/html" ! A.id "studentModalTemplate" $
       H.div ! A.class_ "fluid-row" $ do
         H.div ! A.class_ "span4" $ do
