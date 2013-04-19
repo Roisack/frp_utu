@@ -37,19 +37,19 @@ Seuraavat oleelliset tyypit määrittävät miten tietoa käsitellään:
 * creditsData palauttaa tiedot suorituksista suoritustauluun
 * thesisData palauttaa tiedot opinto-ohjelmista opinto-ohjelmatauluun
 * studentsData palauttaa tiedot opiskelijoista opiskelijatauluun
-* studentsUpload tää oli joku matsin iframe hack
-* thesisUpload ^
-* creditsUpload ^
+* studentsUpload lähettää uudet opiskelijatiedot sivun datatableen
+* thesisUpload lähettää uudet opinto-ohjelmatiedot sivun datatableen
+* creditsUpload lähettää uudet suoritustiedot sivun datatableen
 * notFoundView tuottaa HTML-sivun, joka vastaa virhettä 404
-* uploadForm liittyy jotenkin tähän samaan hackiin
+* uploadForm luo näkymättömän iframen, jonka kautta voidaan lähettää tietoja sivulle
 * mainView tuottaa itse sivun HTML-koodin
 * lookBSsafe
 * looksafe
 * studentsCredits palauttaa vain ne suoritukset, jotka tietty opiskelija on suorittanut
 * main lataa datan sekä käynnistää tarjottavat palvelut
 
-## Tartjotut palvelut
+## Tarjotut palvelut
 
-* /student?studentId=XXXX
-* /thesis?degreeId=XXXX
-* /course?courseId=XXXX
+* /student?studentId=XXXX tarjoaa tietoja pyydetystä opiskelijasta
+* /thesis?degreeId=XXXX tarjoaa tietoja pyydetystä opinto-ohjelmasta
+* /course?courseId=XXXX tarjoaa tietoja pyydetystä kurssista
