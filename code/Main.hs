@@ -400,7 +400,7 @@ mainView students = H.docTypeHtml $ do
               H.ul ! A.class_ "nav nav-list" $ do
                 H.li ! A.class_ "nav-header" $ "Sidebar"
                 H.li $ H.a ! data_target "students" ! A.href "#" $ "Students"
-                H.li $ H.a ! data_target "degrees" ! A.href "#" $ "Degreees"
+                H.li $ H.a ! data_target "degrees" ! A.href "#" $ "Degrees"
                 H.li $ H.a ! data_target "credits" ! A.href "#" $ "Credits"
           H.div ! A.class_ "span4" $ do
             uploadForm "studentFile" "Update students file" "student/upload"
