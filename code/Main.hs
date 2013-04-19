@@ -161,6 +161,30 @@ studentModal = H.div ! A.id "modal" ! A.class_ "modal hide fade" $ do
     data_dismiss = attribute "data-dismiss" "data-dismiss=\""
     aria_hidden = attribute "aria-hidden" "aria-hidden=\""
 
+creditQuery :: Mining Response
+creditQuery = do
+    students <- gets students
+    thesis <- gets thesis
+    credits <- gets credits
+    id' <- lookText "courseId"
+    maybe
+      -- If no courseId is found, return an error --
+      (notFound $ toResponse $ notFoundView $ H.p "Course not found")
+      -- If it was found, return the JSON containing the appropriate data --
+      (ok . toResponse . toJSON . creditInfo students credits)
+      -- Find the credits relevant for this course --
+      (find (\i -> id' == creditId i) credits)
+    where
+     creditInfo students credits thesis = let
+        -- Filter to those students who have this credit --
+        -- In English: the list of students who have passed is equal to those students s for
+        -- which applies that the credit's student ID is equal to the student's id, and student
+        -- student s belongs in the students list
+        studentsPassed = [(s, filter(\c -> creditStudentId c == studentId s) credits) | s <- M.elems students]
+      in object [
+        "studentsPassed" .= studentsPassed
+        ]
+
 thesisQuery :: Mining Response
 thesisQuery = do
   students <- gets students
@@ -440,6 +464,7 @@ main = do
         nullDir >> ok (toResponse $ mainView students)
       , dir "student" $ studentQuery
       , dir "thesis" $ thesisQuery
+      , dir "course" $ creditQuery
       , dirs "student/upload" $ studentsUpload
       , dirs "student/data" $ studentsData
       , dirs "degree/data" $ thesisData
