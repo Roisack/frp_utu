@@ -167,24 +167,24 @@ creditQuery = do
     thesis <- gets thesis
     credits <- gets credits
     id' <- lookText "courseId"
+    let credit' = id'
     maybe
       -- If no courseId is found, return an error --
       (notFound $ toResponse $ notFoundView $ H.p "Course not found")
       -- If it was found, return the JSON containing the appropriate data --
-      (ok . toResponse . toJSON . creditInfo students credits)
+      (ok . toResponse . toJSON . creditInfo students credits credit')
       -- Find the credits relevant for this course --
       (find (\i -> id' == creditId i) credits)
     where
-     creditInfo students credits thesis = let
+     creditInfo students credits thesis credit' = let
         -- Filter to those students who have this credit --
         -- In English: the list of students who have passed is equal to those students s for
         -- which applies that the credit's student ID is equal to the student's id, and student
         -- student s belongs in the students list
         studentsPassed = [(s, filter(\c -> creditStudentId c == studentId s) credits) | s <- M.elems students]
-        creditNum = head studentsPassed
         in object [
         "studentsPassed" .= studentsPassed
-      , "creditNumber" .= creditNum
+      , "credit" .= credit'
         ]
 
 thesisQuery :: Mining Response
@@ -376,17 +376,21 @@ mainView students = H.docTypeHtml $ do
     H.script ! A.type_ "text/html" ! A.id "creditModalTemplate" $
       H.div ! A.class_ "fluid-row" $ do
         H.div ! A.class_ "span4" $ do
-          H.h2 $ "Students who have passed:"
+          H.h2 $ "{{credit.creditName}}"
+          H.p $ "{{credit.creditId}}"
+          H.p $ "Students who have passed:"
           H.table ! A.class_ "table" $ do
             H.tr $ do
               H.th $ "Name"
               H.th $ "ID"
               H.th $ "Major"
             H.p $ "{{#studentsPassed}}"
+            H.p $ "{{#.}}"
             H.tr $ do
               H.td $ "{{name}}"
               H.td $ "{{studentId}}"
               H.td $ "{{major}}"
+            H.p $ "{{/.}}"
             H.p $ "{{/studentsPassed}}"
     H.script ! A.type_ "text/html" ! A.id "degreeModalTemplate" $
       H.div ! A.class_ "fluid-row" $ do
