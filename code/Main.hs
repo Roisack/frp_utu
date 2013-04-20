@@ -181,8 +181,10 @@ creditQuery = do
         -- which applies that the credit's student ID is equal to the student's id, and student
         -- student s belongs in the students list
         studentsPassed = [(s, filter(\c -> creditStudentId c == studentId s) credits) | s <- M.elems students]
-      in object [
+        creditNum = head studentsPassed
+        in object [
         "studentsPassed" .= studentsPassed
+      , "creditNumber" .= creditNum
         ]
 
 thesisQuery :: Mining Response
@@ -374,12 +376,18 @@ mainView students = H.docTypeHtml $ do
     H.script ! A.type_ "text/html" ! A.id "creditModalTemplate" $
       H.div ! A.class_ "fluid-row" $ do
         H.div ! A.class_ "span4" $ do
-          H.h2 $ "{{creditName}}"
-          H.hr
-          H.p $ "Course code: {{creditId}}"
-          H.p $ "Credits: {{creditCredits}}"
-          H.p $ "Date: {{creditDate}}"
-          H.p $ "Student number: {{StudentId}}"
+          H.h2 $ "Students who have passed:"
+          H.table ! A.class_ "table" $ do
+            H.tr $ do
+              H.th $ "Name"
+              H.th $ "ID"
+              H.th $ "Major"
+            H.p $ "{{#studentsPassed}}"
+            H.tr $ do
+              H.td $ "{{name}}"
+              H.td $ "{{studentId}}"
+              H.td $ "{{major}}"
+            H.p $ "{{/studentsPassed}}"
     H.script ! A.type_ "text/html" ! A.id "degreeModalTemplate" $
       H.div ! A.class_ "fluid-row" $ do
         H.div ! A.class_ "span4" $ do

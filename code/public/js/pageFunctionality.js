@@ -110,7 +110,7 @@ $(document).ready(function() {
     });
 
     window.touchCourse = initPage({
-        template: $("#degreeModalTemplate").text(),
+        template: $("#creditModalTemplate").text(),
         dtElem: $("#courseData .databox"),
         dtColumns: [
             { "sTitle": "Course id" },
